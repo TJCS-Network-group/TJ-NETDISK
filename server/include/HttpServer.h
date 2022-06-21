@@ -25,6 +25,5 @@ class Routers {
 HttpResponse GET_test(HttpRequest& req);
 HttpResponse POST_test_gzy(HttpRequest& req);
 HttpResponse POST_test(HttpRequest& req);
-HttpResponse GET_test(HttpRequest& req);
 HttpResponse PUT_test(HttpRequest& req);
 HttpResponse DELETE_test(HttpRequest& req);
