@@ -72,7 +72,18 @@ int main() {
 
         while (true) {
             memset(buf, 0, sizeof(buf));
+            // cout << "准备recv" << endl;
             int len = recv(conn, buf, sizeof(buf), 0);
+            // cout << "len: " << len << endl;
+
+            if (len == 0)  //对方返回0，说明已经传输完毕
+            {
+                //我们就断开然后listen，去连下一家，之后应该改成select/epoll
+                // cout << errno << endl << strerror(errno) << endl;
+                cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
+                break;
+            }
+
             buf[len] = '\0';
             string client_http_request = buf;
             cout << client_http_request << endl;
@@ -85,14 +96,6 @@ int main() {
             cout << send_content << endl;
             send(conn, send_content.c_str(), send_content.length(), 0);
             cout << "send over" << endl;
-
-            if (len == 0)  //对方返回0，说明已经传输完毕
-            {
-                //我们就断开然后listen，去连下一家，之后应该改成select/epoll
-                // cout << errno << endl << strerror(errno) << endl;
-                cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
-                break;
-            }
         }
         close(conn);
     }

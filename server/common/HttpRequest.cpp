@@ -14,21 +14,24 @@ void HttpRequest::Parse_request(const string _raw_http_request) {
             if (line == 1) {
                 if (cnt == 0) {
                     method = _raw_http_request.substr(lastcur, cur - lastcur);
+                    // cout << "method: " << method << endl;
                     lastcur = cur + 1;
                     cnt++;
                 } else if (cnt == 1) {
-                    cout << lastcur << "    " << cur << endl;
+                    // cout << lastcur << "    " << cur << endl;
                     string resource = _raw_http_request.substr(lastcur, cur - lastcur);
                     lastcur = cur + 1;
                     size_t pos = resource.find('?');
-                    cout << pos << "    " << resource.npos << endl;
-                    cout << resource << endl;
+                    // cout << pos << "    " << resource.npos << endl;
                     if (pos != resource.npos) {
                         route = resource.substr(0, pos);
                         params = resource.substr(pos);  //Ö®ºóµÄ
                     } else {
                         route = resource;
                     }
+                    // cout << "resource" << resource << endl;
+                    // cout << "route: " << route << endl;
+                    // cout << "params: " << params << endl;
                     cnt++;
                 }
             }
