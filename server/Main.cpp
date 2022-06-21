@@ -12,14 +12,19 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+
+#include "./include/HttpRequest.h"
+#include "./include/HttpResponse.h"
+#include "./include/HttpServer.h"
 using namespace std;
-struct SocketArg {
-    int port;
-    int ip;
-};
+
+char buf[20000000];  //½ÓÊÕ´«¹ıÀ´µÄhttp requestÇëÇó£¬ÔİÊ±ÓÃÁ½Ç§Íò×Ö½Ú´æ(¿ÉÒÔ´æ´¢16MBµÄÊı¾İ)£¬¿ÉÄÜ²»¹»´ó£¬Òª×¢ÒâÒ»ÏÂ
+
 int main() {
-    SocketArg arg;
-    arg.port = 6666;
+    Routers routers;
+    routers.Init_routers();  //×¢²áµÄapi½Ó¿Ú
+
+    int port = 6666;  // 6666¶Ë¿Ú
     cout << "This is server" << endl;
 
     // socket
@@ -32,12 +37,12 @@ int main() {
     // bind
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(arg.port);
+    addr.sin_port = htons(port);
     addr.sin_addr.s_addr = INADDR_ANY;
-    // closesocketï¼ˆä¸€èˆ¬ä¸ä¼šç«‹å³å…³é—­è€Œç»å†TIME_WAITçš„è¿‡ç¨‹ï¼‰åæƒ³ç»§ç»­é‡ç”¨è¯¥socket
+
+    // closesocket£¨Ò»°ã²»»áÁ¢¼´¹Ø±Õ¶ø¾­ÀúTIME_WAITµÄ¹ı³Ì£©ºóÏë¼ÌĞøÖØÓÃ¸Ãsocket
     int opt = 1;
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
-
     if (bind(listenfd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
         cerr << "Error: bind" << endl;
         exit(EXIT_FAILURE);
@@ -65,35 +70,26 @@ int main() {
         inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, INET_ADDRSTRLEN);
         cout << "connect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
 
-        char buf[255];
         while (true) {
             memset(buf, 0, sizeof(buf));
             int len = recv(conn, buf, sizeof(buf), 0);
             buf[len] = '\0';
-            cout << buf << endl;
+            string client_http_request = buf;
+            cout << client_http_request << endl;
 
-            string send_json =
-                "{\
-\"data\": {}, \
-\"message\": \"è¯·æ±‚æ ¼å¼é”™è¯¯\", \
-\"statusCode\": 400, \
-\"success\": false}\
-";
-            string send_str =
-                "HTTP/1.1 200 OK\r\n\
-Content-Type: application/json\r\n\
-Connection: keep-alive\r\n\
-Content-Length: \
-" + to_string(send_json.length()) +
-                "\r\n\n";
+            //´´½¨Ò»¸öHttpRequest¶ÔÏó½âÎöÔ­±¨ÎÄ
+            HttpRequest new_request(client_http_request);
+            HttpResponse new_response = routers.getResponse(new_request);
 
-            string send_content = send_str + send_json;
+            string send_content = new_response.getMessage();  //Òª·¢¸øclient¶ËµÄ±¨ÎÄ
             cout << send_content << endl;
             send(conn, send_content.c_str(), send_content.length(), 0);
+            cout << "send over" << endl;
 
-            if (strcmp(buf, "exit") == 0 || len == 0)  //å¯¹æ–¹ä¼ è¾“äº†exitï¼Œæˆ–è€…å¯¹æ–¹è¿æ¥æ–­å¼€äº†ï¼Œæˆ‘ä»¬å°±æ–­å¼€ç„¶ålistenï¼Œå»è¿ä¸‹ä¸€å®¶
+            if (len == 0)  //¶Ô·½·µ»Ø0£¬ËµÃ÷ÒÑ¾­´«ÊäÍê±Ï
             {
-                cout << errno << endl << strerror(errno) << endl;
+                //ÎÒÃÇ¾Í¶Ï¿ªÈ»ºólisten£¬È¥Á¬ÏÂÒ»¼Ò£¬Ö®ºóÓ¦¸Ã¸Ä³Éselect/epoll
+                // cout << errno << endl << strerror(errno) << endl;
                 cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
                 break;
             }
