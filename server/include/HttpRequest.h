@@ -8,7 +8,9 @@ class HttpRequest {
     std::string route;         // 以'/'开头，去掉params
     std::string method;        // 暂时只用这四种：GET POST PUT DELETE
     std::string params;        // GET时从resource解析出来
-    std::string body;          // JSON或form-data
+    std::string body;          // Type为JSON或form-data时body的内容
+    int Content_Length;        // body的长度
+    std::string Content_Type;  // JSON或form-data
     //解析请求报文
     void Parse_request(const std::string _raw_http_request);
 
