@@ -12,21 +12,31 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <string>
 
 #include "./include/HttpRequest.h"
 #include "./include/HttpResponse.h"
 #include "./include/HttpServer.h"
 using namespace std;
+const int BUFFER_SIZE = 20000000;
+char buf[20000000];  //接收传过来的http request请求，暂时用两千万字节存(可以存储16MB的数据)，可能不够大，要注意一下
 
 //不停的收 直接断开连接
 string http_recv_request(int sockfd) {
-    const int BUFFER_SIZE = 4096;
-    char buffer_tep[BUFFER_SIZE + 1];
+    memset(buf, 0, BUFFER_SIZE);
+    int len = recv(sockfd, buf, BUFFER_SIZE, 0);  //第一次接受数据，把所有header找到
+    // buf[len] = '\0';
+    cout << "len: " << len << endl;
+
+    string client_http_request(buf, len);
+    //创建一个HttpRequest对象解析原报文
+    HttpRequest new_request(client_http_request);
+
     string result;
     while (1) {
-        memset(buffer_tep, 0, BUFFER_SIZE);
-        int len = recv(sockfd, buffer_tep, BUFFER_SIZE, 0);  //接受数据
+        memset(buf, 0, BUFFER_SIZE);
+        int len = recv(sockfd, buf, BUFFER_SIZE, 0);  //接受数据
         if (len == -1) {
             cerr << "Error: recv\n";
             cerr << errno << endl << strerror(errno) << endl;
@@ -35,13 +45,11 @@ string http_recv_request(int sockfd) {
         {
             break;
         }
-        buffer_tep[len] = '\0';  //加尾零
-        result += buffer_tep;    //把buffer_tep数据copy到result中
+        buf[len] = '\0';  //加尾零
+        result += buf;    //把buf数据copy到result中
     }
     return result;
 }
-
-char buf[20000000];  //接收传过来的http request请求，暂时用两千万字节存(可以存储16MB的数据)，可能不够大，要注意一下
 
 int main() {
     Routers routers;
@@ -119,10 +127,11 @@ int main() {
             }
             ++recv_cnt;
             //创建一个HttpRequest对象解析原报文
-            // HttpRequest new_request(client_http_request);
-            // HttpResponse new_response = routers.getResponse(new_request);
-            // string send_content = new_response.getMessage();  //要发给client端的报文
-            // cout << send_content << endl;
+            HttpRequest new_request(client_http_request);
+            HttpResponse new_response = routers.getResponse(new_request);
+            string send_content = new_response.getMessage();  //要发给client端的报文
+            cout << send_content << endl;
+            /*
             string send_json =
                 "{\
 \"data\": {}, \
@@ -139,6 +148,7 @@ Content-Length: \
 " + to_string(send_json.length()) +
                 "\r\n\n";
             string send_content = send_str + send_json;
+            */
             send(conn, send_content.c_str(), send_content.length(), 0);
             cout << "send over" << endl;
         }
