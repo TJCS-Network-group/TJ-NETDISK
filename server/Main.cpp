@@ -133,7 +133,7 @@ int main() {
 
             string send_str =
                 "HTTP/1.1 200 OK\r\n\
-Content-Type: application/json\r\n\
+Content-Type: application/json;charset=GBK\r\n\
 Access-Control-Allow-Origin: *\r\n\
 Content-Length: \
 " + to_string(send_json.length()) +
