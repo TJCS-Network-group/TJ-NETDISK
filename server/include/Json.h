@@ -1,13 +1,14 @@
 #pragma once
 /*
 初始为一个从client端得到的string
+
 Json语法：
-
-string->map<string,string>
-string->vector<string>
-string->int
-string->bool
-
+string->JSON
+JSON->map<string,JSON>
+JSON->vector<JSON>
+JSON->int
+JSON->bool
+JSON->string
 要实现的核心功能为前两条
 
 */
@@ -25,7 +26,7 @@ struct JSON {
             }
         }
     }
-
+    void clear() { raw_json.clear(); }
     std::string as_string() { return raw_json.substr(1, raw_json.size() - 2); };  //主要是去除双引号
     int as_int() { return atoi(raw_json.c_str()); };
     // float as_float();
