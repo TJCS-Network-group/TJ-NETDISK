@@ -4,7 +4,7 @@
 using namespace std;
 
 /*
-    //一个最简单的请求报文实现
+    //一个最简单的响应报文实现
     string send_json =
         "{\
 \"data\": {}, \

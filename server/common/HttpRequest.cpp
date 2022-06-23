@@ -9,6 +9,12 @@ using namespace std;
 // params只有当method为GET的时候才有值，body只解析JSON和from-data就行
 
 void HttpRequest::Parse_request_header(const string _raw_http_request) {
+    // cout << _raw_http_request << endl;
+    if (_raw_http_request.length() == 0) {
+        disconnect = true;
+        return;
+    } else
+        disconnect = false;
     int lastcur = 0, cur = 0, line = 1, cnt = 0;
     //解析第一行
     while (true) {
@@ -58,8 +64,7 @@ void HttpRequest::Parse_request_header(const string _raw_http_request) {
         }
         ++cur;
     }
-    cout << lastcur << endl;
-    cout << cur << endl;
+
     bool find_key = true;
     string key, value;
 
@@ -95,11 +100,11 @@ void HttpRequest::Parse_request_header(const string _raw_http_request) {
     origin_headers = _raw_http_request.substr(0, cur - 2);
     body = _raw_http_request.substr(cur);
 
-    cout << "PARAMS:\n" << endl;
+    cout << "PARAMS:" << endl;
     for (auto i : params) {
         cout << i.first << ':' << i.second << endl;
     }
-    cout << "HEADERS:\n" << endl;
+    cout << "HEADERS:" << endl;
     for (auto i : headers) {
         cout << i.first << ":" << i.second << endl;
     }
