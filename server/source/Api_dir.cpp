@@ -4,6 +4,10 @@
 using namespace std;
 HttpResponse GET_filesystem_get_dir(HttpRequest &req)
 {
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(401, "当前用户未登录");
+    }
     int dir_id;
     if (req.params.find("dir_id") == req.params.end())
     {
