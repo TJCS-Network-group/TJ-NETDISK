@@ -34,5 +34,4 @@ Main
 *.txt
 
 # pool temp
-/pool
-*
+/init_database/pool
