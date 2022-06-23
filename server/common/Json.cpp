@@ -71,8 +71,8 @@ std::vector<JSON> JSON_to_vector(JSON json) {
 
 std::map<std::string, JSON> JSON::as_map() { return JSON_to_map(*this); }
 std::vector<JSON> JSON::as_vector() { return JSON_to_vector(*this); }
-std::ostream &operator<<(std::ostream &os, JSON &a) {
-    os << a.raw_json << endl;
+std::ostream &operator<<(std::ostream &os, const JSON &a) {
+    os << a.raw_json;
     return os;
 }
 JSON JSON::operator[](const std::string &key) { return this->as_map()[key]; }
@@ -89,6 +89,7 @@ void test() {
 ";
     cout << send_json << endl;
     JSON tep(send_json);
+    cout << tep << endl;
     std::map<string, JSON> tep_map = JSON_to_map(tep);
     cout << "message: " << tep_map["message"].as_string() << endl;
     cout << "size: " << JSON_to_vector(tep_map["data"]).size() << endl;
