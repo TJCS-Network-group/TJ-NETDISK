@@ -5,7 +5,7 @@
 #include <string>
 
 #include "./Json.h"
-std::map<int, std::string> session;  // user_id : cookie的md5部分
+extern std::map<int, std::string> session;  // user_id : cookie的md5部分
 class HttpRequest {
    public:
     std::string http_version;                      // 大部分应该都是1.1

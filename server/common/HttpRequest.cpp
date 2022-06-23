@@ -8,6 +8,8 @@ using namespace std;
 // Method暂时只用这四种：GET POST PUT DELETE
 // params只有当method为GET的时候才有值，body只解析JSON和from-data就行
 
+std::map<int, std::string> session;  // user_id : cookie的md5部分
+
 void HttpRequest::Parse_request_header(const string _raw_http_request) {
     // cout << _raw_http_request << endl;
     if (_raw_http_request.length() == 0) {
@@ -108,7 +110,10 @@ void HttpRequest::Parse_request_header(const string _raw_http_request) {
     for (auto i : headers) {
         cout << i.first << ":" << i.second << endl;
     }
-
+    cout << "SESSION: " << endl;
+    for (auto i : session) {
+        cout << i.first << ": " << i.second << endl;
+    }
     if (headers.count("Cookie") != 0) {  //有cookie
         string cookie = headers["Cookie"];
         string current_user_str;
@@ -129,13 +134,13 @@ void HttpRequest::Parse_request_header(const string _raw_http_request) {
                 cout << "cookie错误！" << endl;
                 current_user_id = 0;
             }
-            cout << current_user_id << endl;
+            cout << "current_user_id:" << current_user_id << endl;
         }
     }
 }
 
 void HttpRequest::Parse_request_body() {
-    if (headers.count("Content-Length") != 0) {
+    if (headers.count("Content-Type") != 0) {
         string type = headers["Content-Type"];
         cout << type << endl;
         {
