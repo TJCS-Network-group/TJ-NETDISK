@@ -33,3 +33,6 @@
 Main
 *.txt
 
+# pool temp
+/pool
+*
