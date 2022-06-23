@@ -42,6 +42,7 @@ HttpResponse POST_login(HttpRequest &req)
         }
         else
         {
+            return make_response_json(500);
         }
     }
     //如果密码正确
