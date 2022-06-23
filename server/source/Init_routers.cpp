@@ -13,4 +13,5 @@ void Routers::Init_routers()
     setRouter("GET", "/api/upload_allocation", GET_upload_allocation);
     setRouter("PUT", "/api/filesystem/rename_file", PUT_filesystem_rename_file);
     setRouter("PUT", "/api/filesystem/rename_dir", PUT_filesystem_rename_dir);
+    setRouter("GET", "/api/download_fragment", GET_download_fragment);
 }

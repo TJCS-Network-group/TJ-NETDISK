@@ -1,6 +1,7 @@
 //解析client端传入的HTTP请求
 #include "../include/HttpRequest.h"
 #include "../include/HttpTool.h"
+#include <fstream>
 #include <iostream>
 using namespace std;
 // 解析请求报文
@@ -214,7 +215,7 @@ void HttpRequest::Parse_request_body()
                         string content_line_1 = content.substr(0, line_1_pos);
 
                         string find_filename = "filename=\"";
-                        if (find_name_form_data(content_line_1, find_filename, filename) != -1)
+                        if (find_name_form_data(content_line_1, find_filename, filename) != -1) //是个文件
                         {
                             form_data["filename"] = To_gbk(filename);
                             string find_name = "name=\"";
@@ -227,7 +228,20 @@ void HttpRequest::Parse_request_body()
                                     size_t begin_pos = i + 1;
                                     size_t value_len = content.length() - begin_pos - 2; //最后还有一个\r\n
                                     string value = content.substr(begin_pos, value_len);
-                                    form_data[To_gbk(key)] = To_gbk(value);
+                                    form_data[To_gbk(key)] = value;
+                                    /*
+                                    cout << "文件大小: " << value.size() << endl;
+                                    fstream myf_body("./request_file/" + filename, ios::out | ios::binary);
+                                    if (myf_body.good())
+                                    {
+                                        myf_body << value;
+                                    }
+                                    else
+                                    {
+                                        cout << "Can't open file!" << endl;
+                                    }
+                                    myf_body.close();
+                                    */
                                 }
                             }
                         }
@@ -240,11 +254,6 @@ void HttpRequest::Parse_request_body()
                             form_data[To_gbk(key)] = To_gbk(value);
                         }
                     }
-                }
-                cout << "Form_data:" << endl;
-                for (auto i : form_data)
-                {
-                    cout << i.first << ":" << i.second << endl;
                 }
             }
         }
