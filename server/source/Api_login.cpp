@@ -31,7 +31,7 @@ HttpResponse POST_login(HttpRequest &req)
     }
     else
     {
-        string cmd = "echo " + password + " | md5sum";
+        string cmd = "echo -n " + password + " | md5sum";
         FILE *fp = popen(cmd.c_str(), "r");
         if (fp != NULL)
         {
@@ -52,7 +52,7 @@ HttpResponse POST_login(HttpRequest &req)
         resp = make_response_json(200);
 
         srand(time(NULL));
-        string cmd = "echo " + user_name + to_string(rand()) + " | md5sum";
+        string cmd = "echo -n " + user_name + to_string(rand()) + " | md5sum";
         FILE *fp = popen(cmd.c_str(), "r");
         if (fp != NULL)
         {
@@ -101,7 +101,7 @@ HttpResponse POST_register(HttpRequest &req)
     }
     else
     {
-        string cmd = "echo " + password + " | md5sum";
+        string cmd = "echo -n" + password + " | md5sum";
         FILE *fp = popen(cmd.c_str(), "r");
         if (fp != NULL)
         {
