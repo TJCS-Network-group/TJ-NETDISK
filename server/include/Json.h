@@ -16,7 +16,7 @@ JSON->string
 #include <map>
 #include <string>
 #include <vector>
-struct JSON {
+    struct JSON {
     std::string raw_json;
 
     JSON(std::string s = "") {
@@ -26,7 +26,11 @@ struct JSON {
             }
         }
     }
-    void clear() { raw_json.clear(); }
+    friend std::ostream &operator<<(std::ostream &os, JSON &a);  //重载输出流
+    JSON operator[](const std::string &key);                     //重载
+    JSON operator[](int index);                                  //重载
+    std::map<std::string, JSON> as_map();
+    std::vector<JSON> as_vector();
     std::string as_string() { return raw_json.substr(1, raw_json.size() - 2); };  //主要是去除双引号
     int as_int() { return atoi(raw_json.c_str()); };
     // float as_float();

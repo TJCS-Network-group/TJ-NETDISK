@@ -12,11 +12,11 @@ std::map<std::string, JSON> JSON_to_map(JSON json) {
         if (find_value == true) {
             if (find_value_stack.size() == 0 && raw_json[i] == '}') {
                 res[key] = JSON(value);
-                cout << "key: " << key << endl << "value: " << value << endl;
+                // cout << "key: " << key << endl << "value: " << value << endl;
                 break;
             } else if (find_value_stack.size() == 0 && raw_json[i] == ',') {
                 res[key] = JSON(value);
-                cout << "key: " << key << endl << "value: " << value << endl;
+                // cout << "key: " << key << endl << "value: " << value << endl;
                 value.clear();
                 find_value = false;
             } else {
@@ -44,7 +44,6 @@ std::map<std::string, JSON> JSON_to_map(JSON json) {
     }
     return res;
 }
-
 std::vector<JSON> JSON_to_vector(JSON json) {
     vector<JSON> res;
     string raw_json = json.raw_json;
@@ -66,9 +65,17 @@ std::vector<JSON> JSON_to_vector(JSON json) {
     return res;
 }
 
-//使用参考例：
-/*
-int test() {
+std::map<std::string, JSON> JSON::as_map() { return JSON_to_map(*this); }
+std::vector<JSON> JSON::as_vector() { return JSON_to_vector(*this); }
+std::ostream &operator<<(std::ostream &os, JSON &a) {
+    os << a.raw_json << endl;
+    return os;
+}
+JSON JSON::operator[](const std::string &key) { return this->as_map()[key]; }
+JSON JSON::operator[](int index) { return this->as_vector()[index]; }
+
+//参考用例
+void test() {
     string send_json =
         "{\n\
 \"data\": [{\"md5\":1},{\"md5\":1}], \n\
@@ -80,7 +87,6 @@ int test() {
     JSON tep(send_json);
     std::map<string, JSON> tep_map = JSON_to_map(tep);
     cout << tep_map["message"].as_string() << endl;
-    cout << JSON_to_map(JSON_to_vector(tep_map["data"])[0])["md5"].as_int() << endl;
-    return 0;
+    // cout << JSON_to_map(JSON_to_vector(tep_map["data"])[0])["md5"].as_int() << endl;
+    cout << tep_map["data"][0]["md5"].as_int() << endl;
 }
-*/
