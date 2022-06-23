@@ -1,3 +1,5 @@
+#!/bin/bash python3
+# -*- coding: gbk -*-
 from copy import deepcopy
 import os
 import pandas as pd
@@ -6,7 +8,7 @@ import pymysql as pm
 db = pm.connect(host='localhost',
                      user='root',
                      password='tj_market',
-                     database='pan')
+                     database='pan',charset="gbk")
 
 
 db_cursor = db.cursor()
@@ -40,7 +42,7 @@ db.commit()
 users=["³ÌÉ­","¸ßÔøÒê","³Â¹ÚÖÒ"]
 passwds=["1234567","7654321","1919810"]
 for j in range(1,4):
-    sql = "insert into UserEntity(user_name,password_hash,root_dir_id) value {};".format((users[j-1],hashlib.md5(passwds[j-1].encode("utf-8")).hexdigest(),4-j))
+    sql = "insert into UserEntity(user_name,password_hash,root_dir_id) value {};".format((users[j-1],hashlib.md5(passwds[j-1].encode("gbk")).hexdigest(),4-j))
     db_cursor.execute(sql)
     db.commit()
 
