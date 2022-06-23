@@ -46,8 +46,8 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
                     string params_str = resource.substr(pos + 1); //之后的
                     if (Parse_params(params_str, params) == -1)
                     {
-                        cerr << "popen fail" << endl;
-                        exit(-1);
+                        cerr << "popen fail.Params 未解析成功" << endl;
+                        // exit(-1);
                     }
                 }
                 else
@@ -263,8 +263,8 @@ void HttpRequest::Parse_request_body()
             {
                 if (Parse_params(body, form_data) == -1)
                 {
-                    cerr << "popen fail" << endl;
-                    exit(-1);
+                    cerr << "popen fail.Params 未解析成功" << endl;
+                    // exit(-1);
                 }
             }
         }

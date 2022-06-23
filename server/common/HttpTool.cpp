@@ -149,6 +149,11 @@ int encoding_url(const string &url, string &result)
 }
 int decoding_url(const string &url, string &result)
 {
+    if (url == "")
+    {
+        result = "";
+        return 0;
+    }
     string cmd = "printf $(echo -n \"" + url + "\" | sed \'s/\\\\/\\\\\\\\/g;s/\\(%\\)\\([0-9a-fA-F][0-9a-fA-F]\\)/\\\\x\\2/g\')";
     int size = popen_cmd(cmd, result, 4 * url.size());
     result = To_gbk(result);
