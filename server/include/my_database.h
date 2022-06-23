@@ -1,5 +1,6 @@
 #include <mysql/mysql.h> // mysqlÃÿ”–
 #include <map>
+#include <cstdio>
 #include <vector>
 #include <string>
 using namespace std;
@@ -9,14 +10,22 @@ protected:
     MYSQL *mysql;
     MYSQL_RES *result;
     MYSQL_ROW row;
+    static const char *host;
+    static const char *user;
+    static const char *passwd;
+    static const char *db;
+    static const unsigned int port;
+    static const char *unix_socket;
+    static const unsigned long clientflag;
+    static const char *character_set_name;
 
 public:
-    vector<map<string, string>> result_vector;
+    char sql[1024];
+    vector<map<string, string>>
+        result_vector;
     my_database();
-    void connect(const char *host, const char *user, const char *passwd, const char *db,
-                 unsigned int port, const char *unix_socket, unsigned long clientflag);
-    int set_character(const char *character_set_name);
-    int execute(const char *query);
+    void connect();
+    int execute();
     int get();
     void show();
     void disconnect();
