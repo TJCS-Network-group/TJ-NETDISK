@@ -16,7 +16,7 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
     dir_id = atoi(req.params["dir_id"].c_str());
     my_database p;
     p.connect();
-    sprintf(p.sql, "select FileDirectoryMap.fid as id,FileDirectoryMap.fname as name,FileEntity.fsize as fsize\
+    sprintf(p.sql, "select FileDirectoryMap.id as id,FileDirectoryMap.fname as name,FileEntity.fsize as fsize\
      from FileDirectoryMap join FileEntity on FileEntity.id=FileDirectoryMap.fid where FileDirectoryMap.did=%d",
             dir_id);
     if (p.execute() == -1)
