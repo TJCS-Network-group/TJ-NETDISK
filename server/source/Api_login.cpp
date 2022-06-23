@@ -2,12 +2,23 @@
 #include "../include/HttpServer.h"
 #include "../include/HttpTool.h"
 #include "../include/my_database.h"
+#include <exception>
 using namespace std;
 // API的具体实现
 HttpResponse POST_login(HttpRequest &req)
 { //要发送的JSON
-    string user_name = req.json["user_name"].as_string();
-    string password = req.json["password"].as_string();
+    string user_name;
+    string password;
+    try
+    {
+        user_name = req.json["user_name"].as_string();
+        password = req.json["password"].as_string();
+    }
+    catch (exception e)
+    {
+        return make_response_json(400, "请求格式不对");
+    }
+
     bool password_correct = false;
     HttpResponse resp;
     //查找用户实体表项
@@ -32,7 +43,7 @@ HttpResponse POST_login(HttpRequest &req)
     else
     {
         string cmd = "echo -n " + password + " | md5sum", result;
-        if (popen_cmd(cmd, result) == 0)
+        if (popen_cmd(cmd, result, 32 + 1) != -1)
         {
             cout << result << endl;
             cout << p.result_vector[0]["password_hash"] << endl;
@@ -50,7 +61,7 @@ HttpResponse POST_login(HttpRequest &req)
         resp = make_response_json(200);
         srand(time(NULL));
         string cmd = "echo -n " + user_name + to_string(rand()) + " | md5sum", result;
-        if (popen_cmd(cmd, result) == 0)
+        if (popen_cmd(cmd, result, 32 + 1) != -1)
         {
 
             // 通过md5加密{user_name,rand}并保存在session
@@ -80,8 +91,17 @@ HttpResponse POST_login(HttpRequest &req)
 
 HttpResponse POST_register(HttpRequest &req)
 { //要发送的JSON
-    string user_name = req.json["user_name"].as_string();
-    string password = req.json["password"].as_string();
+    string user_name;
+    string password;
+    try
+    {
+        user_name = req.json["user_name"].as_string();
+        password = req.json["password"].as_string();
+    }
+    catch (exception e)
+    {
+        return make_response_json(400, "请求格式不对");
+    }
     HttpResponse resp;
     //添加用户实体表项
     my_database p;
@@ -99,7 +119,7 @@ HttpResponse POST_register(HttpRequest &req)
     else
     {
         string cmd = "echo -n " + password + " | md5sum", result;
-        if (popen_cmd(cmd, result) == 0)
+        if (popen_cmd(cmd, result, 32 + 1) != -1)
         {
 
             sprintf(p.sql, "select max(id) as max_id from DirectoryEntity");
