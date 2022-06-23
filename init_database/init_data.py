@@ -5,10 +5,7 @@ import os
 import pandas as pd
 import hashlib
 import pymysql as pm
-db = pm.connect(host='localhost',
-                     user='root',
-                     password='tj_market',
-                     database='pan',charset="gbk")
+db = pm.connect(host='localhost',user='root',password='tj_market',database='pan',charset="gbk")
 
 
 db_cursor = db.cursor()
