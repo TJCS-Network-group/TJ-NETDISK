@@ -43,7 +43,7 @@ HttpResponse GET_download_fragment(HttpRequest &req)
     // string file_path = "./request_file/sjk.png"; //碎片的地址
     string file_value = FileToStr(file_path);
     HttpResponse resp;
-    resp.setHeader("Content-Type: application/octet-stream");
+    resp.setHeader("Content-Type: application/octet-stream");            //直接传输二进制
     resp.setHeader("Content-Length: " + to_string(file_value.length())); //长度
     resp.setBody(file_value);
     return resp;
