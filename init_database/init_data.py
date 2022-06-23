@@ -2,13 +2,14 @@
 # -*- coding: gbk -*-
 from copy import deepcopy
 import os
-import pandas as pd
+#import pandas as pd
 import hashlib
 import pymysql as pm
 db = pm.connect(host='localhost',user='root',password='root123',database='pan',charset="gbk")
 
 
 db_cursor = db.cursor()
+"""
 with open("pan.sql","r",encoding='gbk') as f:
     x = list(map(lambda x:x.strip(),f.readlines()))
     t = list()
@@ -21,6 +22,7 @@ with open("pan.sql","r",encoding='gbk') as f:
     for i in t:
         db_cursor.execute(i)
         db.commit()
+"""
 for j in range(1,4):
     sql = "insert into DirectoryEntity(id,dname,parent_id) value {};".format((j,"root",j))
     db_cursor.execute(sql)

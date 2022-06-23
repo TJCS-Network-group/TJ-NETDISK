@@ -155,8 +155,8 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     { //有cookie
         string cookie = headers["Cookie"];
         string current_user_str;
-        // cookie结构： user_id=1951705|{md5};
-        string sub_str = "user_id=";
+        // cookie结构： remember_token=1951705|{md5};
+        string sub_str = "remember_token=";
         size_t pos = cookie.find(sub_str);
         if (pos != cookie.npos)
         {
