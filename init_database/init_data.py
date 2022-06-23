@@ -63,7 +63,7 @@ with open("test.pdf","rb") as f:
         db_cursor.execute(sql)
         db.commit()
         sql = "insert into FileFragmentMap(fid,`index`,fgid) value {};".\
-            format((1,num,num))
+            format((1,num-1,num))
         print(sql)
         db_cursor.execute(sql)
         db.commit()
