@@ -32,10 +32,12 @@ HttpRequest http_recv_request(int sockfd) {  //传入accept的socketfd
     string client_http_request(buf, len);
     //创建一个HttpRequest对象解析第一次发过来的原报文（包含完整header, 但可能不包含完整body）
     HttpRequest new_request(client_http_request);
+
     while (new_request.Read_body_over() == false)  //收到Content-Length没达到body值
     {
         memset(buf, 0, BUFFER_SIZE);
         int len = recv(sockfd, buf, BUFFER_SIZE, 0);  //接受数据
+        cout << "len: " << len << endl;
         if (len == -1) {
             cerr << "Error: recv\n";
             cerr << errno << endl << strerror(errno) << endl;
@@ -105,6 +107,10 @@ int main() {
         while (true) {
             //创建一个HttpRequest对象解析原报文
             HttpRequest new_request = http_recv_request(conn);
+            if (new_request.disconnect == true) {
+                cout << "disconnect" << endl;
+                break;
+            }
             // header
             fstream myf_headers("./request_file/" + to_string(recv_cnt) + "_response_headers.txt", ios::out | ios::binary);
             if (myf_headers.good()) {
@@ -139,7 +145,9 @@ int main() {
 
             send(conn, send_content.c_str(), send_content.length(), 0);
         }
+
         close(conn);
+        cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
     }
     close(listenfd);
     return 0;

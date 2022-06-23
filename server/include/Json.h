@@ -40,4 +40,11 @@ struct JSON {
         else
             return false;
     };
+    JSON &operator=(const JSON &t) {
+        // ±ÜÃâ×Ô¸³Öµ Éî¿½±´
+        if (this != &t) {
+            raw_json = t.raw_json;
+        }
+        return *this;
+    }
 };

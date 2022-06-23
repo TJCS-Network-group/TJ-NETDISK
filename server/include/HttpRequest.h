@@ -17,6 +17,7 @@ class HttpRequest {
     std::string body;                              // Type为JSON或form-data时body的内容
     JSON json;                                     // body中含有json时需要
     std::map<std::string, std::string> form_data;  //若含有文件，除了api规定的字段外，此map中会新加一个filename字段
+    bool disconnect;
 
     //解析(包含headers的)请求报文
     void Parse_request_header(const std::string _raw_http_request);
@@ -38,6 +39,7 @@ class HttpRequest {
     std::string Get_origin_headers() { return origin_headers; }
     std::string Get_body() { return body; }
     void clear() {
+        disconnect = false;
         http_version.clear();
         route.clear();
         method.clear();
@@ -45,6 +47,22 @@ class HttpRequest {
         form_data.clear();
         json.clear();
         body.clear();
+    }
+    HttpRequest& operator=(const HttpRequest& t) {
+        // 避免自赋值 深拷贝
+        if (this != &t) {
+            http_version = t.http_version;
+            route = t.route;
+            method = t.method;
+            params = t.params;
+            headers = t.headers;
+            origin_headers = t.origin_headers;
+            body = t.body;
+            json = t.json;
+            form_data = t.form_data;
+            disconnect = t.disconnect;
+        }
+        return *this;
     }
     ~HttpRequest() { clear(); }
 };
