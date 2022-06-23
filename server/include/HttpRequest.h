@@ -5,7 +5,7 @@
 #include <string>
 
 #include "./Json.h"
-
+std::map<int, std::string> session;  // user_id : cookie的md5部分
 class HttpRequest {
    public:
     std::string http_version;                      // 大部分应该都是1.1
@@ -17,6 +17,7 @@ class HttpRequest {
     std::string body;                              // Type为JSON或form-data时body的内容
     JSON json;                                     // body中含有json时需要
     std::map<std::string, std::string> form_data;  //若含有文件，除了api规定的字段外，此map中会新加一个filename字段
+    int current_user_id;
     bool disconnect;
 
     //解析(包含headers的)请求报文
@@ -24,7 +25,7 @@ class HttpRequest {
     //解析body内容（若有）
     void Parse_request_body();
 
-    HttpRequest(const std::string _raw_http_request) { Parse_request_header(_raw_http_request); }
+    HttpRequest(const std::string _raw_http_request = "") { Parse_request_header(_raw_http_request); }
     void Concat_body(const std::string _body) { body += _body; }
     bool Read_body_over() {
         if (headers.count("Content-Length") != 0) {  //存在length字段且body的长度与length的长度不一致 认为还没读完body
@@ -40,6 +41,7 @@ class HttpRequest {
     std::string Get_body() { return body; }
     void clear() {
         disconnect = false;
+        current_user_id = 0;  // current_user_id为0代表没登录
         http_version.clear();
         route.clear();
         method.clear();

@@ -104,9 +104,10 @@ int main() {
         cout << "connect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
 
         int recv_cnt = 0;
+        HttpRequest new_request;
         while (true) {
             //创建一个HttpRequest对象解析原报文
-            HttpRequest new_request = http_recv_request(conn);
+            new_request = http_recv_request(conn);
             if (new_request.disconnect == true) {
                 cout << "disconnect" << endl;
                 break;
@@ -147,6 +148,8 @@ int main() {
         }
 
         close(conn);
+        //我们的所有cookie都只限于本次回话，disconnect之后要从session中删掉
+        if (session.count(new_request.current_user_id) != 0) session.erase(new_request.current_user_id);
         cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
     }
     close(listenfd);

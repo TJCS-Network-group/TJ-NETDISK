@@ -108,7 +108,32 @@ void HttpRequest::Parse_request_header(const string _raw_http_request) {
     for (auto i : headers) {
         cout << i.first << ":" << i.second << endl;
     }
+
+    if (headers.count("Cookie") != 0) {  //有cookie
+        string cookie = headers["Cookie"];
+        string current_user_str;
+        // cookie结构： user_id=1951705|{md5};
+        string sub_str = "user_id=";
+        size_t pos = cookie.find(sub_str);
+        if (pos != cookie.npos) {
+            int cur = pos + sub_str.length();
+            while (cur < cookie.length()) {
+                if (cookie[cur] == '|') break;
+                current_user_str.push_back(cookie[cur]);
+                ++cur;
+            }
+            string md5 = cookie.substr(cur + 1);
+            current_user_id = atoi(current_user_str.c_str());  // current_user_id为0代表没登录
+
+            if (session.count(current_user_id) == 0 || md5 != session[current_user_id]) {  //与session中的表项对比
+                cout << "cookie错误！" << endl;
+                current_user_id = 0;
+            }
+            cout << current_user_id << endl;
+        }
+    }
 }
+
 void HttpRequest::Parse_request_body() {
     if (headers.count("Content-Length") != 0) {
         string type = headers["Content-Type"];
