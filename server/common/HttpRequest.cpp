@@ -1,6 +1,6 @@
 //解析client端传入的HTTP请求
 #include "../include/HttpRequest.h"
-
+#include "../include/HttpTool.h"
 #include <iostream>
 using namespace std;
 // 解析请求报文
@@ -41,33 +41,13 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
                 if (pos != resource.npos)
                 {
                     route = resource.substr(0, pos);
+
                     string params_str = resource.substr(pos + 1); //之后的
-                    string key, value;
-                    bool find_key = true;
-                    for (size_t i = 0; i < params_str.size(); ++i)
+                    if (Parse_params(params_str, params) == -1)
                     {
-                        if (params_str[i] == '&')
-                        {
-                            find_key = true;
-                            params.insert({key, value});
-                            key.clear();
-                            value.clear();
-                        }
-                        else if (params_str[i] == '=')
-                        {
-                            find_key = false;
-                        }
-                        else
-                        {
-                            if (find_key)
-                                key.push_back(params_str[i]);
-                            else
-                            {
-                                value.push_back(params_str[i]);
-                            }
-                        }
+                        cerr << "popen fail" << endl;
+                        exit(-1);
                     }
-                    params[key] = value; //最后一项
                 }
                 else
                 {
@@ -133,12 +113,13 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     origin_headers = _raw_http_request.substr(0, cur - 2);
     body = _raw_http_request.substr(cur);
     // cout << body << endl;
-    /*
+
     cout << "PARAMS:" << endl;
     for (auto i : params)
     {
         cout << i.first << ':' << i.second << endl;
     }
+    /*
     cout << "HEADERS:" << endl;
     for (auto i : headers)
     {
@@ -149,7 +130,6 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     {
         cout << i.first << ": " << i.second << endl;
     }*/
-    cout << current_user_id << endl;
     if (headers.count("Cookie") != 0)
     { //有cookie
         string cookie = headers["Cookie"];
@@ -175,9 +155,9 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
                 cout << "cookie错误！" << endl;
                 current_user_id = 0;
             }
-            cout << "current_user_id:" << current_user_id << endl;
         }
     }
+    cout << "current_user_id:" << current_user_id << endl;
 }
 
 void HttpRequest::Parse_request_body()
@@ -199,6 +179,22 @@ void HttpRequest::Parse_request_body()
             size_t pos = type.find("multipart/form-data");
             if (pos != type.npos)
             { //找到了子串"multipart/form-data"，是form-data
+            }
+        }
+        {
+            size_t pos = type.find("application/x-www-form-urlencoded");
+            if (pos != type.npos) //找到了子串"application/x-www-form-urlencoded"，是无文件的form
+            {
+                if (Parse_params(body, form_data) == -1)
+                {
+                    cerr << "popen fail" << endl;
+                    exit(-1);
+                }
+                cout << "Form_data:" << endl;
+                for (auto i : form_data)
+                {
+                    cout << i.first << ":" << i.second << endl;
+                }
             }
         }
     }

@@ -54,8 +54,8 @@ HttpResponse make_response_json(int _statusCode, string _message, string _data, 
 //找路由表，返回响应
 HttpResponse Routers::getResponse(HttpRequest &req)
 {
-    for (auto iter : routers)
-    { //路由表里找已注册路由
+    for (auto iter : routers) //路由表里找已注册路由
+    {
         // cout << req.method << endl;
         // cout << iter.first.first << endl;
         // cout << req.route << endl;

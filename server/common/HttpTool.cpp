@@ -115,20 +115,79 @@ string To_gbk(string utf8_str)
     else //不需要转
         return utf8_str;
 }
-int popen_cmd(string cmd, string &result)
+int popen_cmd(string cmd, string &result, const int max_result_len)
 {
     FILE *fp = popen(cmd.c_str(), "r");
     int ans;
     if (fp != NULL)
     {
-        char buf[33];
-        result = fgets(buf, 33, fp);
+        char buf[max_result_len];
+        result = fgets(buf, max_result_len, fp);
         pclose(fp);
-        ans = 0;
+        ans = result.size();
     }
     else
     {
-        ans = 1;
+        ans = -1;
     }
     return ans;
+}
+int encoding_url(const string &url, string &result)
+{
+    string cmd = "echo -n \"" + url + "\" |tr -d \'\\n\' |od -An -tx1|tr \' \' %";
+    if (popen_cmd(cmd, result, 4 * url.size()) == -1)
+    {
+        return result.size();
+    }
+    else
+        return -1;
+}
+int decoding_url(const string &url, string &result)
+{
+    string cmd = "printf $(echo -n \"" + url + "\" | sed \'s/\\\\/\\\\\\\\/g;s/\\(%\\)\\([0-9a-fA-F][0-9a-fA-F]\\)/\\\\x\\2/g\')";
+    int size = popen_cmd(cmd, result, 4 * url.size());
+    result = To_gbk(result);
+    if (size != -1)
+    {
+        return result.size();
+    }
+    else
+        return -1;
+}
+
+int Parse_params(const string &params_str, map<string, string> &params)
+{
+    string key, value;
+    bool find_key = true;
+    for (size_t i = 0; i < params_str.size(); ++i)
+    {
+        if (params_str[i] == '&')
+        {
+            find_key = true;
+            if (decoding_url(key, key) != -1 && decoding_url(value, value) != -1)
+                params.insert({key, value});
+            else
+                return -1;
+            key.clear();
+            value.clear();
+        }
+        else if (params_str[i] == '=')
+        {
+            find_key = false;
+        }
+        else
+        {
+            if (find_key)
+                key.push_back(params_str[i]);
+            else
+            {
+                value.push_back(params_str[i]);
+            }
+        }
+    }
+    if (decoding_url(key, key) != -1 && decoding_url(value, value) != -1)
+        params.insert({key, value});
+    else
+        return -1;
+    return 0;
 }

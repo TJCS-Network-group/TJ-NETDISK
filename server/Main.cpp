@@ -29,6 +29,7 @@ HttpRequest http_recv_request(int sockfd)
     int len = recv(sockfd, buf, BUFFER_SIZE, 0); //第一次接受数据，把所有header找到
     // buf[len] = '\0';
     cout << "len: " << len << endl;
+    // cout << buf;
 
     string client_http_request(buf, len);
     //创建一个HttpRequest对象解析第一次发过来的原报文（包含完整header, 但可能不包含完整body）
@@ -121,10 +122,11 @@ int main()
             new_request = http_recv_request(conn);
             if (new_request.disconnect == true)
             {
-                cout << "disconnect" << endl;
+                // cout << "disconnect" << endl;
                 break;
             }
 
+            /*
             // header
             fstream myf_headers("./request_file/" + to_string(recv_cnt) + "_response_headers.txt", ios::out | ios::binary);
             if (myf_headers.good())
@@ -141,13 +143,13 @@ int main()
             if (myf_body.good())
             {
                 myf_body << new_request.Get_body();
-                cout << new_request.Get_body();
             }
             else
             {
                 cout << "Can't open file!" << endl;
             }
             myf_body.close();
+            */
             //完整response
             fstream myf("./request_file/" + to_string(recv_cnt) + "_response.txt", ios::out | ios::binary);
             if (myf.good())
