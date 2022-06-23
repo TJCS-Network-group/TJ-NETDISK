@@ -16,9 +16,9 @@ JSON->string
 #include <map>
 #include <string>
 #include <vector>
-    struct JSON {
+struct JSON {
     std::string raw_json;
-
+    void clear() { raw_json.clear(); }
     JSON(std::string s = "") {
         for (char i : s) {
             if (i != ' ' && i != '\n' && i != '\t' && i != '\r') {

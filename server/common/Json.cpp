@@ -50,16 +50,20 @@ std::vector<JSON> JSON_to_vector(JSON json) {
     stack<char> find_item_stack;
     string target_json;
     for (size_t i = 1; i < raw_json.size(); ++i) {
+        if (raw_json[i] == ',' && find_item_stack.size() == 0) {
+            ++i;
+            res.push_back(JSON(target_json));
+            target_json.clear();
+        }
+        if (raw_json[i] == ']' && find_item_stack.size() == 0) {
+            res.push_back(JSON(target_json));
+            target_json.clear();
+        }
         target_json.push_back(raw_json[i]);
         if (raw_json[i] == '[' || raw_json[i] == '{') {
             find_item_stack.push(raw_json[i]);
         } else if (raw_json[i] == '}' || raw_json[i] == ']') {
             find_item_stack.pop();
-        }
-        if (raw_json[i] == ',' && find_item_stack.size() == 0) {
-            ++i;
-            res.push_back(JSON(target_json));
-            target_json.clear();
         }
     }
     return res;
@@ -78,7 +82,7 @@ JSON JSON::operator[](int index) { return this->as_vector()[index]; }
 void test() {
     string send_json =
         "{\n\
-\"data\": [{\"md5\":1},{\"md5\":1}], \n\
+\"data\": [{\"md5\":1},{\"md5\":3}], \n\
 \"message\": \"«Î«Û∏Ò Ω¥ÌŒÛ\", \n\
 \"statusCode\": 400, \n\
 \"success\": false\n}\
@@ -86,7 +90,9 @@ void test() {
     cout << send_json << endl;
     JSON tep(send_json);
     std::map<string, JSON> tep_map = JSON_to_map(tep);
-    cout << tep_map["message"].as_string() << endl;
-    // cout << JSON_to_map(JSON_to_vector(tep_map["data"])[0])["md5"].as_int() << endl;
-    cout << tep_map["data"][0]["md5"].as_int() << endl;
+    cout << "message: " << tep_map["message"].as_string() << endl;
+    cout << "size: " << JSON_to_vector(tep_map["data"]).size() << endl;
+    cout << "md5(1): " << JSON_to_map(JSON_to_vector(tep_map["data"])[1])["md5"].as_int() << endl;
+    cout << "md5(0): " << tep_map["data"][0]["md5"].as_int() << endl;
+    cout << "md5(1): " << tep_map["data"][1]["md5"].as_int() << endl;
 }
