@@ -35,3 +35,4 @@ HttpResponse GET_logout(HttpRequest &req);
 HttpResponse GET_filesystem_get_dir(HttpRequest &req);
 HttpResponse GET_get_root_id(HttpRequest &req);
 HttpResponse GET_file_exist(HttpRequest &req);
+HttpResponse GET_file_fragment(HttpRequest &req);
