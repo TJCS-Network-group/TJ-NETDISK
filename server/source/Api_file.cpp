@@ -106,7 +106,6 @@ HttpResponse PUT_filesystem_rename_file(HttpRequest &req)
     p.get();
     int current_root_id = atoi(p.result_vector[0]["root_dir_id"].c_str());
     int child, parent;
-    bool is_current_user = false;
     child = 0;
     parent = did;
     while (child != parent)
