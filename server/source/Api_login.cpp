@@ -38,8 +38,6 @@ HttpResponse POST_login(HttpRequest &req)
             char buf[33];
             string md5 = fgets(buf, 33, fp);
             pclose(fp);
-            cout << md5 << endl;
-            cout << p.result_vector[0]["password_hash"] << endl;
             password_correct = (md5 == p.result_vector[0]["password_hash"]);
         }
         else
@@ -49,9 +47,7 @@ HttpResponse POST_login(HttpRequest &req)
     //如果密码正确
     if (password_correct)
     {
-        cout << p.result_vector[0]["id"].c_str() << endl;
         user_id = atoi(p.result_vector[0]["id"].c_str());
-        cout << user_id << endl;
         resp = make_response_json(200);
 
         srand(time(NULL));
