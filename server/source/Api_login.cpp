@@ -8,7 +8,6 @@ HttpResponse POST_login(HttpRequest &req)
 { //要发送的JSON
     string user_name = req.json["user_name"].as_string();
     string password = req.json["password"].as_string();
-    cout << "current_user:" << req.current_user_id << endl;
     bool password_correct;
     HttpResponse resp;
     //查找用户实体表项
@@ -21,8 +20,10 @@ HttpResponse POST_login(HttpRequest &req)
     my_database p;
     p.connect();
     sprintf(p.sql, "select id,password_hash from UserEntity where user_name=\"%s\"", user_name.c_str());
-    cout << p.sql << endl;
-    p.execute();
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
+    }
     p.get();
     if (p.result_vector.size() == 0)
     {
@@ -31,7 +32,6 @@ HttpResponse POST_login(HttpRequest &req)
     else
     {
         string cmd = "echo " + password + " | md5sum";
-        cout << cmd << endl;
         FILE *fp = popen(cmd.c_str(), "r");
         if (fp != NULL)
         {
@@ -53,7 +53,6 @@ HttpResponse POST_login(HttpRequest &req)
 
         srand(time(NULL));
         string cmd = "echo " + user_name + to_string(rand()) + " | md5sum";
-        cout << cmd << endl;
         FILE *fp = popen(cmd.c_str(), "r");
         if (fp != NULL)
         {
@@ -63,13 +62,13 @@ HttpResponse POST_login(HttpRequest &req)
 
             // 通过md5加密{user_name,rand}并保存在session
             // 对于每个用户的每个会话，这个md5值应该要一致
-            cout << md5 << endl;
             session[user_id] = md5;
-            cout << "Login session: " << endl;
+            // cout << "Login session: " << endl;
+            /*
             for (auto i : session)
             {
                 cout << i.first << ":" << i.second << endl;
-            }
+            }*/
             resp.setHeader("Set-Cookie: remember_token=" + to_string(user_id) + "|" + md5);
             //给client的set-cookie，没设置expires,即仅限于此次回话
         }
@@ -91,7 +90,10 @@ HttpResponse POST_register(HttpRequest &req)
     my_database p;
     p.connect();
     sprintf(p.sql, "select id from UserEntity where user_name=\"%s\"", user_name.c_str());
-    p.execute();
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
+    }
     p.get();
     if (p.result_vector.size() > 0)
     {
@@ -100,26 +102,33 @@ HttpResponse POST_register(HttpRequest &req)
     else
     {
         string cmd = "echo " + password + " | md5sum";
-        cout << cmd << endl;
         FILE *fp = popen(cmd.c_str(), "r");
         if (fp != NULL)
         {
             char buf[33];
             string md5 = fgets(buf, 33, fp);
             pclose(fp);
-            cout << md5 << endl;
             //
             sprintf(p.sql, "select max(id) as max_id from DirectoryEntity");
-            p.execute();
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
+            }
             p.get();
             int max_id = atoi(p.result_vector[0]["max_id"].c_str()) + 1;
             sprintf(p.sql, "insert into DirectoryEntity(id,dname,parent_id) value (%d,\"%s\",%d)", max_id, "root", max_id);
-            p.execute();
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
+            }
             sprintf(p.sql,
                     "insert into UserEntity(user_name,password_hash,root_dir_id) \
             value (\"%s\",\"%s\",%d)",
                     user_name.c_str(), md5.c_str(), max_id);
-            p.execute();
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
+            }
             resp = make_response_json(200);
         }
         else

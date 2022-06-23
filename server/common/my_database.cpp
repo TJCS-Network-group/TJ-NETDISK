@@ -68,11 +68,12 @@ void my_database::disconnect()
 }
 int my_database::execute()
 {
+    cout << sql << endl;
     vector<map<string, string>>().swap(result_vector);
     if (mysql_query(mysql, sql))
     {
         cout << "mysql_query failed(" << mysql_error(mysql) << ")" << endl;
-        exit(-1);
+        return -1;
     }
     return 0;
 }
