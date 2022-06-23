@@ -8,7 +8,7 @@ HttpResponse POST_login(HttpRequest &req)
 { //要发送的JSON
     string user_name = req.json["user_name"].as_string();
     string password = req.json["password"].as_string();
-    bool password_correct;
+    bool password_correct = false;
     HttpResponse resp;
     //查找用户实体表项
     int user_id;
@@ -20,24 +20,29 @@ HttpResponse POST_login(HttpRequest &req)
     my_database p;
     p.connect();
     sprintf(p.sql, "select id,password_hash from UserEntity where user_name=\"%s\"", user_name.c_str());
+    cout << "sql:" << p.sql << endl;
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.get();
+    cout << "sql result length:" << p.result_vector.size() << endl;
     if (p.result_vector.size() == 0)
     {
-        resp = make_response_json(404, "该用户不存在");
+        return make_response_json(404, "该用户不存在");
     }
     else
     {
         string cmd = "echo -n " + password + " | md5sum";
+        cout << cmd << endl;
         FILE *fp = popen(cmd.c_str(), "r");
         if (fp != NULL)
         {
             char buf[33];
             string md5 = fgets(buf, 33, fp);
             pclose(fp);
+            cout << md5 << endl;
+            cout << p.result_vector[0]["password_hash"] << endl;
             password_correct = (md5 == p.result_vector[0]["password_hash"]);
         }
         else

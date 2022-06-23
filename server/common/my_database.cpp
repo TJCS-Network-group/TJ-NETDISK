@@ -52,7 +52,6 @@ void my_database::connect()
         cout << "set character " << character_set_name << " failed" << endl;
         exit(-1);
     }
-    cout << "connect " << db << " success" << endl;
 }
 void my_database::disconnect()
 {
@@ -68,7 +67,6 @@ void my_database::disconnect()
 }
 int my_database::execute()
 {
-    cout << sql << endl;
     vector<map<string, string>>().swap(result_vector);
     if (mysql_query(mysql, sql))
     {
