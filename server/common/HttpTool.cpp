@@ -1,12 +1,11 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <locale.h>
 #include <map>
 #include <regex>
 #include <string>
 #include <vector>
-
-#include "../include/HttpServer.h"
 using namespace std;
 
 //本地文件转成string
@@ -49,41 +48,70 @@ string bool_to_string(bool _success)
         return "false";
 }
 
-//标准API接口下的传输方法, 这里data直接用string存了
-HttpResponse make_response_json(int _statusCode, string _message, string _data, bool _success)
+/**
+ * DESCRIPTION: 实现由utf8编码到gbk编码的转换
+ *
+ * Input: gbkStr,转换后的字符串;  srcStr,待转换的字符串; maxGbkStrlen, gbkStr的最大长度
+ * Output: gbkStr
+ * Returns: -1,fail;>0,success
+ *
+ */
+int utf82gbk(char *gbkStr, const char *srcStr, int maxGbkStrlen)
 {
-    if (_statusCode / 100 == 2)
+    if (NULL == srcStr)
     {
-        _success = true;
-        if (_message == "")
-            _message = "success";
+        printf("Bad Parameter\n");
+        return -1;
     }
-    else
-    {
-        _success = false;
-        if (_message == "")
-            _message = "fail";
-    }
-    //要发送的JSON
-    string send_json =
-        "{\
-\"data\": " +
-        _data +
-        ", \
-\"message\": \"" +
-        _message +
-        "\", \
-\"statusCode\": " +
-        to_string(_statusCode) +
-        ", \
-\"success\": " +
-        bool_to_string(_success) +
-        "}\
-";
 
-    HttpResponse resp;
-    resp.setHeader("Content-Type: application/json;charset=GBK"); // json&gbk
-    resp.setBody(send_json);
-    resp.setHeader("Content-Length: " + to_string(send_json.length())); //长度
-    return resp;
+    //首先先将utf8编码转换为unicode编码
+    if (NULL == setlocale(LC_ALL, "zh_CN.utf8")) //设置转换为unicode前的码,当前为utf8编码
+    {
+        printf("Bad Parameter\n");
+        return -1;
+    }
+
+    int unicodeLen = mbstowcs(NULL, srcStr, 0); //计算转换后的长度
+    if (unicodeLen <= 0)
+    {
+        printf("Can not Transfer!!!\n");
+        return -1;
+    }
+    wchar_t *unicodeStr = (wchar_t *)calloc(sizeof(wchar_t), unicodeLen + 1);
+    mbstowcs(unicodeStr, srcStr, strlen(srcStr)); //将utf8转换为unicode
+
+    //将unicode编码转换为gbk编码
+    if (NULL == setlocale(LC_ALL, "zh_CN.gbk")) //设置unicode转换后的码,当前为gbk
+    {
+        printf("Bad Parameter\n");
+        return -1;
+    }
+    int gbkLen = wcstombs(NULL, unicodeStr, 0); //计算转换后的长度
+    if (gbkLen <= 0)
+    {
+        printf("Can not Transfer!!!\n");
+        return -1;
+    }
+    else if (gbkLen >= maxGbkStrlen) //判断空间是否足够
+    {
+        printf("Dst Str memory not enough\n");
+        return -1;
+    }
+    wcstombs(gbkStr, unicodeStr, gbkLen);
+    gbkStr[gbkLen] = 0; //添加结束符
+    free(unicodeStr);
+    return gbkLen;
+}
+
+string To_gbk(string utf8_str)
+{
+    int maxGbkLen = sizeof(char) * utf8_str.length() * 2;
+    char *buf = (char *)malloc(maxGbkLen);
+    int gbkLen = utf82gbk(buf, utf8_str.c_str(), maxGbkLen);
+    string gbk_str(buf, gbkLen);
+    free(buf);
+    if (gbkLen != -1)
+        return gbk_str;
+    else //不需要转
+        return utf8_str;
 }

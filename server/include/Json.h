@@ -31,7 +31,7 @@ struct JSON {
     JSON operator[](int index);                                        //重载
     std::map<std::string, JSON> as_map();
     std::vector<JSON> as_vector();
-    std::string as_string() { return raw_json.substr(1, raw_json.size() - 2); };  //主要是去除双引号
+    std::string as_string();
     int as_int() { return atoi(raw_json.c_str()); };
     // float as_float();
     bool as_bool() {

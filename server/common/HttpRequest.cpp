@@ -132,7 +132,8 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     }
     origin_headers = _raw_http_request.substr(0, cur - 2);
     body = _raw_http_request.substr(cur);
-
+    // cout << body << endl;
+    /*
     cout << "PARAMS:" << endl;
     for (auto i : params)
     {
@@ -147,10 +148,8 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     for (auto i : session)
     {
         cout << i.first << ": " << i.second << endl;
-    }
+    }*/
     cout << current_user_id << endl;
-    current_user_id = 0;
-    disconnect = false;
     if (headers.count("Cookie") != 0)
     { //有cookie
         string cookie = headers["Cookie"];
@@ -189,7 +188,6 @@ void HttpRequest::Parse_request_body()
         cout << type << endl;
         {
             size_t pos = type.find("application/json");
-            cout << pos << endl;
             if (pos != type.npos)
             { //找到了子串"application/json"，是json
                 json = JSON(body);
@@ -199,7 +197,6 @@ void HttpRequest::Parse_request_body()
         }
         {
             size_t pos = type.find("multipart/form-data");
-            cout << pos << endl;
             if (pos != type.npos)
             { //找到了子串"multipart/form-data"，是form-data
             }
