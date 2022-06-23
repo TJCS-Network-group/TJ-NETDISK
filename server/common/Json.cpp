@@ -1,68 +1,93 @@
 #include "../include/Json.h"
-
+#include "../include/HttpTool.h"
+#include <cstring>
 #include <stack>
 using namespace std;
-std::map<std::string, JSON> JSON_to_map(JSON json) {
+std::map<std::string, JSON> JSON_to_map(JSON json)
+{
     string raw_json = json.raw_json;
     map<string, JSON> res;
     string key, value;
     stack<char> find_value_stack;
     bool find_key = 0, find_value = 0;
-    for (size_t i = 1; i < raw_json.size(); ++i) {
-        if (find_value == true) {
-            if (find_value_stack.size() == 0 && raw_json[i] == '}') {
+    for (size_t i = 1; i < raw_json.size(); ++i)
+    {
+        if (find_value == true)
+        {
+            if (find_value_stack.size() == 0 && raw_json[i] == '}')
+            {
                 res[key] = JSON(value);
                 // cout << "key: " << key << endl << "value: " << value << endl;
                 break;
-            } else if (find_value_stack.size() == 0 && raw_json[i] == ',') {
+            }
+            else if (find_value_stack.size() == 0 && raw_json[i] == ',')
+            {
                 res[key] = JSON(value);
                 // cout << "key: " << key << endl << "value: " << value << endl;
                 value.clear();
                 find_value = false;
-            } else {
-                if (raw_json[i] == '[' || raw_json[i] == '{') {
+            }
+            else
+            {
+                if (raw_json[i] == '[' || raw_json[i] == '{')
+                {
                     find_value_stack.push(raw_json[i]);
-                } else if (raw_json[i] == '}' || raw_json[i] == ']') {
+                }
+                else if (raw_json[i] == '}' || raw_json[i] == ']')
+                {
                     find_value_stack.pop();
                 }
                 value.push_back(raw_json[i]);
             }
         }
-        if (raw_json[i] == '\"' && find_value == false) {
-            if (find_key == true) {
+        if (raw_json[i] == '\"' && find_value == false)
+        {
+            if (find_key == true)
+            {
                 // key准备好了,准备找value
                 find_key = false;
-                ++i;  //跳过冒号
+                ++i; //跳过冒号
                 find_value = true;
-            } else {  //准备找key
+            }
+            else
+            { //准备找key
                 find_key = true;
                 key.clear();
             }
-        } else if (find_key == true) {
+        }
+        else if (find_key == true)
+        {
             key.push_back(raw_json[i]);
         }
     }
     return res;
 }
-std::vector<JSON> JSON_to_vector(JSON json) {
+std::vector<JSON> JSON_to_vector(JSON json)
+{
     vector<JSON> res;
     string raw_json = json.raw_json;
     stack<char> find_item_stack;
     string target_json;
-    for (size_t i = 1; i < raw_json.size(); ++i) {
-        if (raw_json[i] == ',' && find_item_stack.size() == 0) {
+    for (size_t i = 1; i < raw_json.size(); ++i)
+    {
+        if (raw_json[i] == ',' && find_item_stack.size() == 0)
+        {
             ++i;
             res.push_back(JSON(target_json));
             target_json.clear();
         }
-        if (raw_json[i] == ']' && find_item_stack.size() == 0) {
+        if (raw_json[i] == ']' && find_item_stack.size() == 0)
+        {
             res.push_back(JSON(target_json));
             target_json.clear();
         }
         target_json.push_back(raw_json[i]);
-        if (raw_json[i] == '[' || raw_json[i] == '{') {
+        if (raw_json[i] == '[' || raw_json[i] == '{')
+        {
             find_item_stack.push(raw_json[i]);
-        } else if (raw_json[i] == '}' || raw_json[i] == ']') {
+        }
+        else if (raw_json[i] == '}' || raw_json[i] == ']')
+        {
             find_item_stack.pop();
         }
     }
@@ -71,15 +96,23 @@ std::vector<JSON> JSON_to_vector(JSON json) {
 
 std::map<std::string, JSON> JSON::as_map() { return JSON_to_map(*this); }
 std::vector<JSON> JSON::as_vector() { return JSON_to_vector(*this); }
-std::ostream &operator<<(std::ostream &os, const JSON &a) {
+std::ostream &operator<<(std::ostream &os, const JSON &a)
+{
     os << a.raw_json;
     return os;
 }
 JSON JSON::operator[](const std::string &key) { return this->as_map()[key]; }
 JSON JSON::operator[](int index) { return this->as_vector()[index]; }
 
+string JSON::as_string() //主要是去除双引号，处理中文等
+{
+    string utf8_str = raw_json.substr(1, raw_json.size() - 2);
+    return To_gbk(utf8_str);
+};
+
 //参考用例
-void test() {
+void test()
+{
     string send_json =
         "{\n\
 \"data\": [{\"md5\":1},{\"md5\":3}], \n\

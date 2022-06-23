@@ -20,12 +20,13 @@
 #include "./include/HttpServer.h"
 using namespace std;
 const int BUFFER_SIZE = 100000;
-char buf[BUFFER_SIZE];  //接收传过来的http request请求，暂时用十万字节存，可能不够大，要注意一下
+char buf[BUFFER_SIZE]; //接收传过来的http request请求，暂时用十万字节存，可能不够大，要注意一下
 
 //不停的收 直接断开连接
-HttpRequest http_recv_request(int sockfd) {  //传入accept的socketfd
+HttpRequest http_recv_request(int sockfd)
+{ //传入accept的socketfd
     memset(buf, 0, BUFFER_SIZE);
-    int len = recv(sockfd, buf, BUFFER_SIZE, 0);  //第一次接受数据，把所有header找到
+    int len = recv(sockfd, buf, BUFFER_SIZE, 0); //第一次接受数据，把所有header找到
     // buf[len] = '\0';
     cout << "len: " << len << endl;
 
@@ -33,16 +34,19 @@ HttpRequest http_recv_request(int sockfd) {  //传入accept的socketfd
     //创建一个HttpRequest对象解析第一次发过来的原报文（包含完整header, 但可能不包含完整body）
     HttpRequest new_request(client_http_request);
 
-    while (new_request.Read_body_over() == false)  //收到Content-Length没达到body值
+    while (new_request.Read_body_over() == false) //收到Content-Length没达到body值
     {
         memset(buf, 0, BUFFER_SIZE);
-        int len = recv(sockfd, buf, BUFFER_SIZE, 0);  //接受数据
+        int len = recv(sockfd, buf, BUFFER_SIZE, 0); //接受数据
         cout << "len: " << len << endl;
-        if (len == -1) {
+        if (len == -1)
+        {
             cerr << "Error: recv\n";
-            cerr << errno << endl << strerror(errno) << endl;
+            cerr << errno << endl
+                 << strerror(errno) << endl;
             exit(EXIT_FAILURE);
-        } else if (len == 0)  // disconnect
+        }
+        else if (len == 0) // disconnect
         {
             break;
         }
@@ -53,16 +57,18 @@ HttpRequest http_recv_request(int sockfd) {  //传入accept的socketfd
     return new_request;
 }
 
-int main() {
+int main()
+{
     Routers routers;
-    routers.Init_routers();  //注册的api接口
+    routers.Init_routers(); //注册的api接口
 
-    int port = 7777;  // 7777
+    int port = 7777; // 7777
     cout << "This is server" << endl;
 
     // socket
     int listenfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (listenfd == -1) {
+    if (listenfd == -1)
+    {
         cerr << "Error: socket" << endl;
         exit(EXIT_FAILURE);
     }
@@ -76,13 +82,15 @@ int main() {
     // closesocket（一般不会立即关闭而经历TIME_WAIT的过程）后想继续重用该socket
     int opt = 1;
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
-    if (bind(listenfd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+    if (bind(listenfd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
+    {
         cerr << "Error: bind" << endl;
         exit(EXIT_FAILURE);
     }
 
     // listen
-    if (listen(listenfd, 1) == -1) {
+    if (listen(listenfd, 1) == -1)
+    {
         cerr << "Error: listen" << endl;
         exit(EXIT_FAILURE);
     }
@@ -92,10 +100,12 @@ int main() {
     char clientIP[INET_ADDRSTRLEN] = "";
     struct sockaddr_in clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
-    while (true) {
+    while (true)
+    {
         cout << "listening..." << endl;
         conn = accept(listenfd, (struct sockaddr *)&clientAddr, &clientAddrLen);
-        if (conn < 0) {
+        if (conn < 0)
+        {
             cerr << "Error: accept" << endl;
             continue;
         }
@@ -105,41 +115,58 @@ int main() {
 
         int recv_cnt = 0;
         HttpRequest new_request;
-        while (true) {
+        while (true)
+        {
             //创建一个HttpRequest对象解析原报文
             new_request = http_recv_request(conn);
-            if (new_request.disconnect == true) {
+            if (new_request.disconnect == true)
+            {
                 cout << "disconnect" << endl;
                 break;
             }
+
             // header
             fstream myf_headers("./request_file/" + to_string(recv_cnt) + "_response_headers.txt", ios::out | ios::binary);
-            if (myf_headers.good()) {
+            if (myf_headers.good())
+            {
                 myf_headers << new_request.Get_origin_headers();
-            } else {
+            }
+            else
+            {
                 cout << "Can't open file!" << endl;
             }
+            myf_headers.close();
             // body
             fstream myf_body("./request_file/" + to_string(recv_cnt) + "_response_body.txt", ios::out | ios::binary);
-            if (myf_body.good()) {
+            if (myf_body.good())
+            {
                 myf_body << new_request.Get_body();
-            } else {
+                cout << new_request.Get_body();
+            }
+            else
+            {
                 cout << "Can't open file!" << endl;
             }
+            myf_body.close();
             //完整response
             fstream myf("./request_file/" + to_string(recv_cnt) + "_response.txt", ios::out | ios::binary);
-            if (myf.good()) {
-                myf << new_request.Get_origin_headers() << "\r\n" << new_request.Get_body();
-            } else {
+            if (myf.good())
+            {
+                myf << new_request.Get_origin_headers() << "\r\n"
+                    << new_request.Get_body();
+            }
+            else
+            {
                 cout << "Can't open file!" << endl;
             }
+            myf.close();
             ++recv_cnt;
 
-            new_request.Parse_request_body();  //解析body
+            new_request.Parse_request_body(); //解析body
 
             HttpResponse new_response = routers.getResponse(new_request);
 
-            string send_content = new_response.getMessage();  //要发给client端的报文
+            string send_content = new_response.getMessage(); //要发给client端的报文
 
             cout << "Send response:" << endl;
             cout << send_content << endl;
@@ -149,7 +176,8 @@ int main() {
 
         close(conn);
         //我们的所有cookie都只限于本次回话，disconnect之后要从session中删掉
-        if (session.count(new_request.current_user_id) != 0) session.erase(new_request.current_user_id);
+        if (session.count(new_request.current_user_id) != 0)
+            session.erase(new_request.current_user_id);
         cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
     }
     close(listenfd);

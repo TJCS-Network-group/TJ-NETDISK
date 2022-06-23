@@ -21,6 +21,7 @@ public:
     //初始化路由表
     void Init_routers();
 };
+HttpResponse make_response_json(int _statusCode = 200, std::string _message = "", std::string _data = "{}", bool _success = true);
 
 //要实现的API函数
 HttpResponse GET_test(HttpRequest &req);

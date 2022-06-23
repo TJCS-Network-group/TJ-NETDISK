@@ -26,7 +26,11 @@ public:
     //Ω‚Œˆbodyƒ⁄»›£®»Ù”–£©
     void Parse_request_body();
 
-    HttpRequest(const std::string _raw_http_request = "") { Parse_request_header(_raw_http_request); }
+    HttpRequest(const std::string _raw_http_request = "")
+    {
+        clear();
+        Parse_request_header(_raw_http_request);
+    }
     void Concat_body(const std::string _body) { body += _body; }
     bool Read_body_over()
     {
@@ -54,6 +58,8 @@ public:
         form_data.clear();
         json.clear();
         body.clear();
+        headers.clear();
+        origin_headers.clear();
     }
     HttpRequest &operator=(const HttpRequest &t)
     {
