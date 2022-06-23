@@ -20,30 +20,23 @@ HttpResponse POST_login(HttpRequest &req)
     my_database p;
     p.connect();
     sprintf(p.sql, "select id,password_hash from UserEntity where user_name=\"%s\"", user_name.c_str());
-    cout << "sql:" << p.sql << endl;
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.get();
-    cout << "sql result length:" << p.result_vector.size() << endl;
     if (p.result_vector.size() == 0)
     {
         return make_response_json(404, "该用户不存在");
     }
     else
     {
-        string cmd = "echo -n " + password + " | md5sum";
-        cout << cmd << endl;
-        FILE *fp = popen(cmd.c_str(), "r");
-        if (fp != NULL)
+        string cmd = "echo -n " + password + " | md5sum", result;
+        if (popen_cmd(cmd, result) == 0)
         {
-            char buf[33];
-            string md5 = fgets(buf, 33, fp);
-            pclose(fp);
-            cout << md5 << endl;
+            cout << result << endl;
             cout << p.result_vector[0]["password_hash"] << endl;
-            password_correct = (md5 == p.result_vector[0]["password_hash"]);
+            password_correct = (result == p.result_vector[0]["password_hash"]);
         }
         else
         {
@@ -55,27 +48,26 @@ HttpResponse POST_login(HttpRequest &req)
     {
         user_id = atoi(p.result_vector[0]["id"].c_str());
         resp = make_response_json(200);
-
         srand(time(NULL));
-        string cmd = "echo -n " + user_name + to_string(rand()) + " | md5sum";
-        FILE *fp = popen(cmd.c_str(), "r");
-        if (fp != NULL)
+        string cmd = "echo -n " + user_name + to_string(rand()) + " | md5sum", result;
+        if (popen_cmd(cmd, result) == 0)
         {
-            char buf[33];
-            string md5 = fgets(buf, 33, fp);
-            pclose(fp);
 
             // 通过md5加密{user_name,rand}并保存在session
             // 对于每个用户的每个会话，这个md5值应该要一致
-            session[user_id] = md5;
+            session[user_id] = result;
             // cout << "Login session: " << endl;
             /*
             for (auto i : session)
             {
                 cout << i.first << ":" << i.second << endl;
             }*/
-            resp.setHeader("Set-Cookie: remember_token=" + to_string(user_id) + "|" + md5);
+            resp.setHeader("Set-Cookie: remember_token=" + to_string(user_id) + "|" + result);
             //给client的set-cookie，没设置expires,即仅限于此次回话
+        }
+        else
+        {
+            return make_response_json(500);
         }
     }
     else
@@ -106,14 +98,10 @@ HttpResponse POST_register(HttpRequest &req)
     }
     else
     {
-        string cmd = "echo -n" + password + " | md5sum";
-        FILE *fp = popen(cmd.c_str(), "r");
-        if (fp != NULL)
+        string cmd = "echo -n " + password + " | md5sum", result;
+        if (popen_cmd(cmd, result) == 0)
         {
-            char buf[33];
-            string md5 = fgets(buf, 33, fp);
-            pclose(fp);
-            //
+
             sprintf(p.sql, "select max(id) as max_id from DirectoryEntity");
             if (p.execute() == -1)
             {
@@ -129,7 +117,7 @@ HttpResponse POST_register(HttpRequest &req)
             sprintf(p.sql,
                     "insert into UserEntity(user_name,password_hash,root_dir_id) \
             value (\"%s\",\"%s\",%d)",
-                    user_name.c_str(), md5.c_str(), max_id);
+                    user_name.c_str(), result.c_str(), max_id);
             if (p.execute() == -1)
             {
                 return make_response_json(500, "数据库查询出错,请联系管理员解决问题");

@@ -115,3 +115,20 @@ string To_gbk(string utf8_str)
     else //不需要转
         return utf8_str;
 }
+int popen_cmd(string cmd, string &result)
+{
+    FILE *fp = popen(cmd.c_str(), "r");
+    int ans;
+    if (fp != NULL)
+    {
+        char buf[33];
+        result = fgets(buf, 33, fp);
+        pclose(fp);
+        ans = 0;
+    }
+    else
+    {
+        ans = 1;
+    }
+    return ans;
+}
