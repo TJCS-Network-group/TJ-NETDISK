@@ -108,12 +108,17 @@ string To_gbk(string utf8_str)
     int maxGbkLen = sizeof(char) * utf8_str.length() * 2;
     char *buf = (char *)malloc(maxGbkLen);
     int gbkLen = utf82gbk(buf, utf8_str.c_str(), maxGbkLen);
-    string gbk_str(buf, gbkLen);
-    free(buf);
     if (gbkLen != -1)
+    {
+        string gbk_str(buf, gbkLen);
+        free(buf);
         return gbk_str;
+    }
     else //不需要转
+    {
+        free(buf);
         return utf8_str;
+    }
 }
 int popen_cmd(string cmd, string &result, const int max_result_len)
 {
