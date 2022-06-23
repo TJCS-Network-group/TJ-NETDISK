@@ -70,7 +70,7 @@ HttpResponse POST_login(HttpRequest &req)
             {
                 cout << i.first << ":" << i.second << endl;
             }
-            resp.setHeader("Set-Cookie: user_id=" + to_string(user_id) + "|" + md5);
+            resp.setHeader("Set-Cookie: remember_token=" + to_string(user_id) + "|" + md5);
             //给client的set-cookie，没设置expires,即仅限于此次回话
         }
     }
@@ -99,7 +99,6 @@ HttpResponse POST_register(HttpRequest &req)
     }
     else
     {
-
         string cmd = "echo " + password + " | md5sum";
         cout << cmd << endl;
         FILE *fp = popen(cmd.c_str(), "r");
@@ -116,7 +115,8 @@ HttpResponse POST_register(HttpRequest &req)
             int max_id = atoi(p.result_vector[0]["max_id"].c_str()) + 1;
             sprintf(p.sql, "insert into DirectoryEntity(id,dname,parent_id) value (%d,\"%s\",%d)", max_id, "root", max_id);
             p.execute();
-            sprintf(p.sql, "insert into UserEntity(user_name,password_hash,root_dir_id) \
+            sprintf(p.sql,
+                    "insert into UserEntity(user_name,password_hash,root_dir_id) \
             value (\"%s\",\"%s\",%d)",
                     user_name.c_str(), md5.c_str(), max_id);
             p.execute();
@@ -138,5 +138,6 @@ HttpResponse GET_logout(HttpRequest &req)
     if (session.count(req.current_user_id))
         session.erase(req.current_user_id);
     resp = make_response_json(200);
+    resp.setHeader("Set-Cookie: remember_token=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; Path=/");
     return resp;
 }
