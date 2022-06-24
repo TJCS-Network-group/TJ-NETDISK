@@ -457,7 +457,7 @@ HttpResponse POST_share_copy_file(HttpRequest &req)
     {
         return make_response_json(500, "数据库新增失败,请联系管理员");
     }
-    //应该开启事务？
+    //应该开启事务？或者是数据库写触发器？
     sprintf(p.sql, "update FileEntity set link_num=link_num+1 where id=%d", fid);
     if (p.execute() == -1)
     {

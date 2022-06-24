@@ -208,7 +208,7 @@ HttpResponse POST_filesystem_create_dir(HttpRequest &req)
     }
     my_database p;
     p.connect();
-    sprintf(p.sql, "select dname from DirectoryEntity where parent_id=%d", pid);
+    sprintf(p.sql, "select dname from DirectoryEntity where parent_id=%d and id!=%d", pid, pid);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员检查");
@@ -239,5 +239,100 @@ HttpResponse POST_filesystem_create_dir(HttpRequest &req)
     set<string>().swap(names);
     p.disconnect();
     message = "新建文件夹成功,新文件夹名为" + fin_name;
+    return make_response_json(200, message);
+}
+HttpResponse POST_share_move_dir(HttpRequest &req)
+{
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(401, "当前用户未登录");
+    }
+    map<string, JSON> data = req.json.as_map();
+    if (data.find("pid") == data.end() || data.find("did") == data.end())
+    {
+        return make_response_json(400, "请求格式不对");
+    }
+    int pid = data["pid"].as_int();
+    int did = data["did"].as_int();
+    if (pid == did)
+    {
+        return make_response_json(400, "不可将文件夹移动到自己内");
+    }
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
+    {
+        return make_response_json(-current_root_id, message);
+    }
+    if (did == current_root_id)
+    {
+        return make_response_json(400, "不可移动根文件夹");
+    }
+    int d_root_id = get_root_id_by_did(did, message);
+    if (d_root_id < 0)
+    {
+        return make_response_json(-d_root_id, message);
+    }
+    if (d_root_id != current_root_id)
+    {
+        return make_response_json(400, "不可移动他人的文件夹");
+    }
+    int p_root_id = get_root_id_by_did(pid, message);
+    if (p_root_id < 0)
+    {
+        return make_response_json(-p_root_id, message);
+    }
+    if (p_root_id != current_root_id)
+    {
+        return make_response_json(400, "不可移动至他人的文件夹");
+    }
+    int check = is_child(pid, did, message);
+    if (check < 0)
+    {
+        return make_response_json(-check, message);
+    }
+    else if (check == 1)
+    {
+        return make_response_json(400, "不可将文件夹移动到其子文件夹下");
+    }
+    my_database p;
+    p.connect();
+    sprintf(p.sql, "select dname from DirectoryEntity where id=%d", did);
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库查询出错,请联系管理员检查");
+    }
+    p.get();
+    string dname = p.result_vector[0]["dname"];
+    sprintf(p.sql, "select dname from DirectoryEntity where parent_id=%d and id!=%d", pid, pid);
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库查询出错,请联系管理员检查");
+    }
+    p.get();
+    set<string> names;
+    for (size_t i = 0; i < p.result_vector.size(); i++)
+    {
+        names.insert(p.result_vector[i]["dname"]);
+    }
+    int num = 0;
+    string fin_name = dname;
+    while (true)
+    {
+        if (names.find(fin_name) != names.end())
+        {
+            num += 1;
+            fin_name = dname + '_' + to_string(num);
+        }
+        else
+            break;
+    }
+    sprintf(p.sql, "update DirectoryEntity set parent_id=%d,dname=\"%s\" where id=%d", pid, fin_name.c_str(), did);
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库更新出错,请联系系统管理员");
+    }
+    p.disconnect();
+    message = "移动文件夹成功,新文件夹名为" + fin_name;
     return make_response_json(200, message);
 }

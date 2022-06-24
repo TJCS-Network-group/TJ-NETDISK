@@ -154,3 +154,40 @@ int get_root_id_by_did(int directory_id, string &message)
     message = "查询结果如下";
     return parent;
 }
+int is_child(int first, int second, string &message)
+{
+    if (first == second)
+    {
+        return 0;
+    }
+    my_database p;
+    p.connect();
+    int result = 0;
+    int parent = first, child = 0;
+    while (parent != child)
+    {
+        child = parent;
+        sprintf(p.sql, "select parent_id from DirectoryEntity where id=%d", child);
+        if (p.execute() == -1)
+        {
+            message = "数据库查询出错,请联系系统管理员";
+            result = -500;
+            break;
+        }
+        p.get();
+        if (p.result_vector.size() == 0)
+        {
+            message = "正在访问不存在的文件夹";
+            result = -400;
+            break;
+        }
+        parent = atoi(p.result_vector[0]["parent_id"].c_str());
+        if (parent == second)
+        {
+            result = 1;
+            break;
+        }
+    }
+    p.disconnect();
+    return result;
+}

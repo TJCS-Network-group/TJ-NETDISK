@@ -39,3 +39,4 @@ HttpResponse POST_filesystem_create_dir(HttpRequest &req);
 HttpResponse POST_upload_fragment(HttpRequest &req);
 HttpResponse POST_share_move_file(HttpRequest &req);
 HttpResponse POST_share_copy_file(HttpRequest &req);
+HttpResponse POST_share_move_dir(HttpRequest &req);
