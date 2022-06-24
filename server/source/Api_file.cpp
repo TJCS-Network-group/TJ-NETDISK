@@ -246,4 +246,5 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         }
     }
     p.disconnect();
+    return make_response_json(200, "需要的下一块为", data);
 }
