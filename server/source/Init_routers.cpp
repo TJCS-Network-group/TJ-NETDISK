@@ -16,4 +16,6 @@ void Routers::Init_routers()
     setRouter("GET", "/api/download_fragment", GET_download_fragment);
     setRouter("POST", "/api/filesystem/create_dir", POST_filesystem_create_dir);
     setRouter("POST", "/api/upload_fragment", POST_upload_fragment);
+    setRouter("POST", "/api/share/move_file", POST_share_move_file);
+    setRouter("POST", "/api/share/copy_file", POST_share_copy_file);
 }

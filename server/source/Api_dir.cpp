@@ -139,28 +139,43 @@ HttpResponse PUT_filesystem_rename_dir(HttpRequest &req)
     {
         return make_response_json(401, "用户无权修改根目录名");
     }
-    if (dname == new_name)
-    {
-        return make_response_json(200, "原文件夹名无需修改");
-    }
-    sprintf(p.sql, "select * from DirectoryEntity where parent_id=%d and id!=%d and id!=%d and dname=\"%s\"",
-            parent_id, parent_id, did, new_name.c_str());
+    sprintf(p.sql, "select dname from DirectoryEntity where parent_id=%d and id!=%d and id!=%d",
+            parent_id, parent_id, did);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.get();
-    if (p.result_vector.size() != 0)
+    set<string> names;
+    for (size_t i = 0; i < p.result_vector.size(); i++)
     {
-        return make_response_json(400, "存在同名文件夹,修改失败");
+        names.insert(p.result_vector[i]["dname"]);
     }
-    sprintf(p.sql, "update DirectoryEntity set dname=\"%s\" where id=%d", new_name.c_str(), did);
+    int num = 0;
+    string fin_name = new_name;
+    while (true)
+    {
+        if (names.find(fin_name) != names.end())
+        {
+            num += 1;
+            fin_name = new_name + '_' + to_string(num);
+        }
+        else
+            break;
+    }
+    if (dname == fin_name)
+    {
+        return make_response_json(200, "新文件夹名和原文件名相同或和其他文件夹存在冲突,修改被取消");
+    }
+    sprintf(p.sql, "update DirectoryEntity set dname=\"%s\" where id=%d", fin_name.c_str(), did);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.disconnect();
-    return make_response_json(200, "改名成功");
+    set<string>().swap(names);
+    message = "新文件夹名为" + fin_name;
+    return make_response_json(200, message);
 }
 
 HttpResponse POST_filesystem_create_dir(HttpRequest &req)
@@ -193,21 +208,36 @@ HttpResponse POST_filesystem_create_dir(HttpRequest &req)
     }
     my_database p;
     p.connect();
-    sprintf(p.sql, "select * from DirectoryEntity where parent_id=%d and dname=\"%s\"", pid, dname.c_str());
+    sprintf(p.sql, "select dname from DirectoryEntity where parent_id=%d", pid);
     if (p.execute() == -1)
     {
-        return make_response_json(500, "数据库插入出错,请联系管理员检查");
+        return make_response_json(500, "数据库查询出错,请联系管理员检查");
     }
     p.get();
-    if (p.result_vector.size() != 0)
+    set<string> names;
+    for (size_t i = 0; i < p.result_vector.size(); i++)
     {
-        return make_response_json(400, "已存在同名文件夹,创建失败");
+        names.insert(p.result_vector[i]["dname"]);
     }
-    sprintf(p.sql, "insert into DirectoryEntity(dname,parent_id) value (\"%s\",%d)", dname.c_str(), pid);
+    int num = 0;
+    string fin_name = dname;
+    while (true)
+    {
+        if (names.find(fin_name) != names.end())
+        {
+            num += 1;
+            fin_name = dname + '_' + to_string(num);
+        }
+        else
+            break;
+    }
+    sprintf(p.sql, "insert into DirectoryEntity(dname,parent_id) value (\"%s\",%d)", fin_name.c_str(), pid);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库插入出错,请联系管理员检查");
     }
+    set<string>().swap(names);
     p.disconnect();
-    return make_response_json(200, "新建文件夹成功");
+    message = "新建文件夹成功,新文件夹名为" + fin_name;
+    return make_response_json(200, message);
 }

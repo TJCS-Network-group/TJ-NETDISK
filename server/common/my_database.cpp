@@ -143,6 +143,11 @@ int get_root_id_by_did(int directory_id, string &message)
             return -500;
         }
         p.get();
+        if (p.result_vector.size() == 0)
+        {
+            message = "查询了不存在的文件夹";
+            return -404;
+        }
         parent = atoi(p.result_vector[0]["parent_id"].c_str());
     }
     p.disconnect();
