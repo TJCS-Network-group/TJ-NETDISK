@@ -1,6 +1,7 @@
 // API函数统一以<method>_<route>命名
 #include "../include/HttpServer.h"
 #include "../include/HttpTool.h"
+#include "../include/my_database.h"
 #include <exception>
 
 using namespace std;
@@ -19,7 +20,27 @@ HttpResponse GET_download_fragment(HttpRequest &req)
         return make_response_json(400, "请求格式不对");
     }
     cout << file_id << index << endl;
-    string file_path = "./request_file/sjk.png"; //碎片的地址
+    my_database p;
+    p.connect();
+    sprintf(p.sql, "select FileFragmentEntity.MD5 as MD5 from FileFragmentMap \
+    join FileFragmentEntity on FileFragmentEntity.id=FileFragmentMap.fgid \
+    where FileFragmentMap.fid=%d and FileFragmentMap.`index`=%d",
+            file_id, index);
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库查询出错");
+    }
+    p.get();
+    if (p.result_vector.size() == 0)
+    {
+        return make_response_json(404, "该文件碎块不存在");
+    }
+    else if (p.result_vector.size() > 1)
+    {
+        return make_response_json(500, "数据库查询出错");
+    }
+    string file_path = "../pool/" + p.result_vector[0]["MD5"];
+    // string file_path = "./request_file/sjk.png"; //碎片的地址
     string file_value = FileToStr(file_path);
     HttpResponse resp;
     resp.setHeader("Content-Type: application/octet-stream");
