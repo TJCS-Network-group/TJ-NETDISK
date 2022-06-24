@@ -237,23 +237,26 @@ int main()
                     epoll_ctl(epollfd, EPOLL_CTL_MOD, sockfd, &ev);
                     */
                 }
-            } /*
-             else if (events[i].events & EPOLLOUT) //有数据待发送，写socket
-             {
-                 cout << "准备取数据" << endl;
-                 Myepoll_data *md = (Myepoll_data *)events[i].data.ptr; //取数据
-                 cout << "写时指针的值: " << md << endl;
-                 cout << "转成功" << endl;
-                 cout << "写current fd: " << sockfd << endl;
-                 cout << md->length << endl;
-                 send(sockfd, md->data, md->length, 0); //发送数据
-                 free(md->data);
-                 free(md);
+            }
+            else if (events[i].events & EPOLLOUT) //有数据待发送，写socket
+            {
+                cout << "貌似没有out的事件" << endl;
+                /*
+                cout << "准备取数据" << endl;
+                Myepoll_data *md = (Myepoll_data *)events[i].data.ptr; //取数据
+                cout << "写时指针的值: " << md << endl;
+                cout << "转成功" << endl;
+                cout << "写current fd: " << sockfd << endl;
+                cout << md->length << endl;
+                send(sockfd, md->data, md->length, 0); //发送数据
+                free(md->data);
+                free(md);
 
-                 ev.data.fd = sockfd;
-                 ev.events = EPOLLIN | EPOLLET;
-                 epoll_ctl(epollfd, EPOLL_CTL_MOD, sockfd, &ev); //修改标识符，等待下一个循环时接收数据
-             }*/
+                ev.data.fd = sockfd;
+                ev.events = EPOLLIN | EPOLLET;
+                epoll_ctl(epollfd, EPOLL_CTL_MOD, sockfd, &ev); //修改标识符，等待下一个循环时接收数据
+                */
+            }
         }
     }
 
