@@ -126,16 +126,17 @@ HttpResponse PUT_filesystem_rename_dir(HttpRequest &req)
     }
     int parent_id = atoi(p.result_vector[0]["parent_id"].c_str());
     string dname = p.result_vector[0]["dname"];
-    int parent = get_root_id_by_did(parent_id, message);
-    if (parent < 0)
+    int check = is_child(current_root_id, parent_id, message);
+    if (check < 0)
     {
-        return make_response_json(-parent, message);
+        return make_response_json(-check, message);
     }
-    if (parent != current_root_id)
+
+    if (!check)
     {
         return make_response_json(400, "无法操作他人的文件夹");
     }
-    if (parent_id == did)
+    if (current_root_id == did)
     {
         return make_response_json(401, "用户无权修改根目录名");
     }
@@ -197,12 +198,12 @@ HttpResponse POST_filesystem_create_dir(HttpRequest &req)
     {
         return make_response_json(-current_root_id, message);
     }
-    int parent = get_root_id_by_did(pid, message);
-    if (parent < 0)
+    int check = is_child(pid, current_root_id, message);
+    if (check < 0)
     {
-        return make_response_json(-parent, message);
+        return make_response_json(-check, message);
     }
-    if (parent != current_root_id)
+    if (!check && pid != current_root_id)
     {
         return make_response_json(400, "不可在别人的文件夹下新建文件夹");
     }
@@ -268,21 +269,21 @@ HttpResponse POST_share_move_dir(HttpRequest &req)
     {
         return make_response_json(400, "不可移动根文件夹");
     }
-    int d_root_id = get_root_id_by_did(did, message);
-    if (d_root_id < 0)
+    int d_check = is_child(did, current_root_id, message);
+    if (d_check < 0)
     {
-        return make_response_json(-d_root_id, message);
+        return make_response_json(-d_check, message);
     }
-    if (d_root_id != current_root_id)
+    if (!d_check && did != current_root_id)
     {
         return make_response_json(400, "不可移动他人的文件夹");
     }
-    int p_root_id = get_root_id_by_did(pid, message);
-    if (p_root_id < 0)
+    int p_check = is_child(pid, current_root_id, message);
+    if (p_check < 0)
     {
-        return make_response_json(-p_root_id, message);
+        return make_response_json(-p_check, message);
     }
-    if (p_root_id != current_root_id)
+    if (!p_check && pid != current_root_id)
     {
         return make_response_json(400, "不可移动至他人的文件夹");
     }

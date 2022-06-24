@@ -33,6 +33,5 @@ public:
     ~my_database();
 };
 int get_root_id_by_user(int user_id, string &message);
-int get_root_id_by_did(int directory_id, string &message);
 //表明first是不是second的子文件夹
 int is_child(int first, int second, string &message);

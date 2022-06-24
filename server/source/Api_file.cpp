@@ -106,12 +106,12 @@ HttpResponse PUT_filesystem_rename_file(HttpRequest &req)
     {
         return make_response_json(-current_root_id, message);
     }
-    int parent = get_root_id_by_did(did, message);
-    if (parent < 0)
+    int check = is_child(did, current_root_id, message);
+    if (check < 0)
     {
-        return make_response_json(-parent, message);
+        return make_response_json(-check, message);
     }
-    if (parent != current_root_id)
+    if (!check && did != current_root_id)
     {
         return make_response_json(400, "无法操作他人的文件");
     }
@@ -301,21 +301,21 @@ HttpResponse POST_share_move_file(HttpRequest &req)
     }
     int f_in_did = atoi(p.result_vector[0]["did"].c_str());
     string fname = p.result_vector[0]["fname"];
-    int f_root_id = get_root_id_by_did(f_in_did, message);
-    if (f_root_id < 0)
+    int f_check = is_child(f_in_did, current_root_id, message);
+    if (f_check < 0)
     {
-        return make_response_json(-f_root_id, message);
+        return make_response_json(-f_check, message);
     }
-    if (f_root_id != current_root_id)
+    if (!f_check && f_in_did != current_root_id)
     {
         return make_response_json(400, "不可移动他人的文件");
     }
-    int d_root_id = get_root_id_by_did(pid, message);
-    if (d_root_id < 0)
+    int d_check = is_child(pid, current_root_id, message);
+    if (d_check < 0)
     {
-        return make_response_json(-d_root_id, message);
+        return make_response_json(-d_check, message);
     }
-    if (d_root_id != current_root_id)
+    if (!d_check && pid != current_root_id)
     {
         return make_response_json(400, "不可移动到他人的文件夹");
     }
@@ -400,21 +400,21 @@ HttpResponse POST_share_copy_file(HttpRequest &req)
     int fid = atoi(p.result_vector[0]["fid"].c_str());
     int f_in_did = atoi(p.result_vector[0]["did"].c_str());
     string fname = p.result_vector[0]["fname"];
-    int f_root_id = get_root_id_by_did(f_in_did, message);
-    if (f_root_id < 0)
+    int f_check = is_child(f_in_did, current_root_id, message);
+    if (f_check < 0)
     {
-        return make_response_json(-f_root_id, message);
+        return make_response_json(-f_check, message);
     }
-    if (f_root_id != current_root_id)
+    if (!f_check && f_in_did != current_root_id)
     {
         return make_response_json(400, "不可移动他人的文件");
     }
-    int d_root_id = get_root_id_by_did(pid, message);
-    if (d_root_id < 0)
+    int d_check = is_child(pid, current_root_id, message);
+    if (d_check < 0)
     {
-        return make_response_json(-d_root_id, message);
+        return make_response_json(-d_check, message);
     }
-    if (d_root_id != current_root_id)
+    if (!d_check && pid != current_root_id)
     {
         return make_response_json(400, "不可移动到他人的文件夹");
     }
@@ -466,4 +466,25 @@ HttpResponse POST_share_copy_file(HttpRequest &req)
     p.disconnect();
     message = "复制成功,新文件名为" + fin_name;
     return make_response_json(200, message);
+}
+HttpResponse DEL_remove_file(HttpRequest &req)
+{
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(401, "当前用户未登录");
+    }
+    map<string, JSON> data = req.json.as_map();
+    if (data.find("fdid") == data.end())
+    {
+        return make_response_json(400, "请求格式不对");
+    }
+
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
+    {
+        return make_response_json(-current_root_id, message);
+    }
+    my_database p;
+    return make_response_json(200);
 }
