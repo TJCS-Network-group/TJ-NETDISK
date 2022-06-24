@@ -84,17 +84,14 @@ HttpResponse GET_get_root_id(HttpRequest &req)
     {
         return make_response_json(401, "当前用户未登录");
     }
-    my_database p;
-    p.connect();
-    sprintf(p.sql, "select root_dir_id as root_id from UserEntity where id=%d", req.current_user_id);
-    if (p.execute() == -1)
+    string message;
+    int root_id = get_root_id_by_user(req.current_user_id, message);
+    if (root_id < 0)
     {
-        return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
+        return make_response_json(-root_id, message);
     }
-    p.get();
-    string root_id = "{\"root_id\":" + p.result_vector[0]["root_id"] + '}';
-    p.disconnect();
-    return make_response_json(200, "查询结果如下", root_id);
+    string data = "{\"root_id\":" + to_string(root_id) + '}';
+    return make_response_json(200, "查询结果如下", data);
 }
 HttpResponse PUT_filesystem_rename_dir(HttpRequest &req)
 {
@@ -109,15 +106,14 @@ HttpResponse PUT_filesystem_rename_dir(HttpRequest &req)
     }
     int did = data["did"].as_int();
     string new_name = data["dname"].as_string();
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
+    {
+        return make_response_json(-current_root_id, message);
+    }
     my_database p;
     p.connect();
-    sprintf(p.sql, "select root_dir_id from UserEntity where id=%d", req.current_user_id);
-    if (p.execute() == -1)
-    {
-        return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
-    }
-    p.get();
-    int current_root_id = atoi(p.result_vector[0]["root_dir_id"].c_str());
     sprintf(p.sql, "select parent_id,dname from DirectoryEntity where id=%d", did);
     if (p.execute() == -1)
     {
@@ -130,23 +126,14 @@ HttpResponse PUT_filesystem_rename_dir(HttpRequest &req)
     }
     int parent_id = atoi(p.result_vector[0]["parent_id"].c_str());
     string dname = p.result_vector[0]["dname"];
-    int child, parent;
-    child = 0;
-    parent = parent_id;
-    while (child != parent)
+    int parent = get_root_id_by_did(parent_id, message);
+    if (parent < 0)
     {
-        child = parent;
-        sprintf(p.sql, "select parent_id from DirectoryEntity where id=%d", child);
-        if (p.execute() == -1)
-        {
-            return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
-        }
-        p.get();
-        parent = atoi(p.result_vector[0]["parent_id"].c_str());
+        return make_response_json(-parent, message);
     }
     if (parent != current_root_id)
     {
-        return make_response_json(400, "无法操作他人的文件");
+        return make_response_json(400, "无法操作他人的文件夹");
     }
     if (parent_id == did)
     {
@@ -174,4 +161,53 @@ HttpResponse PUT_filesystem_rename_dir(HttpRequest &req)
     }
     p.disconnect();
     return make_response_json(200, "改名成功");
+}
+
+HttpResponse POST_filesystem_create_dir(HttpRequest &req)
+{
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(401, "当前用户未登录");
+    }
+    map<string, JSON> data = req.json.as_map();
+    if (data.find("pid") == data.end() || data.find("dname") == data.end())
+    {
+        return make_response_json(400, "请求格式不对");
+    }
+    int pid = data["pid"].as_int();
+    string dname = data["dname"].as_string();
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
+    {
+        return make_response_json(-current_root_id, message);
+    }
+    int parent = get_root_id_by_did(pid, message);
+    if (parent < 0)
+    {
+        return make_response_json(-parent, message);
+    }
+    if (parent != current_root_id)
+    {
+        return make_response_json(400, "不可在别人的文件夹下新建文件夹");
+    }
+    my_database p;
+    p.connect();
+    sprintf(p.sql, "select * from DirectoryEntity where parent_id=%d and dname=\"%s\"", pid, dname.c_str());
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库插入出错,请联系管理员检查");
+    }
+    p.get();
+    if (p.result_vector.size() != 0)
+    {
+        return make_response_json(400, "已存在同名文件夹,创建失败");
+    }
+    sprintf(p.sql, "insert into DirectoryEntity(dname,parent_id) value (\"%s\",%d)", dname.c_str(), pid);
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库插入出错,请联系管理员检查");
+    }
+    p.disconnect();
+    return make_response_json(200, "新建文件夹成功");
 }

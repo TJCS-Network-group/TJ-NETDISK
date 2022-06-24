@@ -31,3 +31,5 @@ public:
     void disconnect();
     ~my_database();
 };
+int get_root_id_by_user(int user_id, string &message);
+int get_root_id_by_did(int directory_id, string &message);

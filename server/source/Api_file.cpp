@@ -93,35 +93,23 @@ HttpResponse PUT_filesystem_rename_file(HttpRequest &req)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
-    cout << p.sql << endl;
     p.get();
     if (p.result_vector.size() == 0)
     {
         return make_response_json(400, "正在修改不存在的文件");
     }
-    auto k = p.result_vector;
     int did = atoi(p.result_vector[0]["did"].c_str());
     string fname = p.result_vector[0]["fname"];
-    sprintf(p.sql, "select root_dir_id from UserEntity where id=%d", req.current_user_id);
-    if (p.execute() == -1)
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
     {
-        return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
+        return make_response_json(-current_root_id, message);
     }
-    p.get();
-    int current_root_id = atoi(p.result_vector[0]["root_dir_id"].c_str());
-    int child, parent;
-    child = 0;
-    parent = did;
-    while (child != parent)
+    int parent = get_root_id_by_did(did, message);
+    if (parent < 0)
     {
-        child = parent;
-        sprintf(p.sql, "select parent_id from DirectoryEntity where id=%d", child);
-        if (p.execute() == -1)
-        {
-            return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
-        }
-        p.get();
-        parent = atoi(p.result_vector[0]["parent_id"].c_str());
+        return make_response_json(-parent, message);
     }
     if (parent != current_root_id)
     {
@@ -144,7 +132,6 @@ HttpResponse PUT_filesystem_rename_file(HttpRequest &req)
     }
     sprintf(p.sql, "update FileDirectoryMap set fname=\"%s\" where id=%d",
             new_name.c_str(), id);
-    cout << p.sql << endl;
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
@@ -223,7 +210,6 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
                 return make_response_json(500, "数据库查询失败,请联系管理员解决问题");
             }
             p.get();
-            cout << "has upload:" << p.result_vector.size();
             for (size_t i = 0; i < p.result_vector.size(); i++)
             {
                 indexs.erase(atoi(p.result_vector[i]["index"].c_str()));

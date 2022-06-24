@@ -105,3 +105,47 @@ void my_database::show()
         }
     }
 }
+int get_root_id_by_user(int user_id, string &message)
+{
+    my_database p;
+    p.connect();
+    sprintf(p.sql, "select root_dir_id as root_id from UserEntity where id=%d", user_id);
+    if (p.execute() == -1)
+    {
+        message = "数据库查询出现错误";
+        return -500;
+    }
+    p.get();
+    if (p.result_vector.size() == 0)
+    {
+        message = "该用户不存在";
+        return -404;
+    }
+    int root_id = atoi(p.result_vector[0]["root_id"].c_str());
+    p.disconnect();
+    message = "查询结果如下";
+    return root_id;
+}
+int get_root_id_by_did(int directory_id, string &message)
+{
+    my_database p;
+    p.connect();
+    int child, parent;
+    child = 0;
+    parent = directory_id;
+    while (child != parent)
+    {
+        child = parent;
+        sprintf(p.sql, "select parent_id from DirectoryEntity where id=%d", child);
+        if (p.execute() == -1)
+        {
+            message = "数据库查询出错,请联系管理员解决问题";
+            return -500;
+        }
+        p.get();
+        parent = atoi(p.result_vector[0]["parent_id"].c_str());
+    }
+    p.disconnect();
+    message = "查询结果如下";
+    return parent;
+}

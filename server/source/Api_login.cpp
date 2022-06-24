@@ -45,8 +45,6 @@ HttpResponse POST_login(HttpRequest &req)
         string cmd = "echo -n " + password + " | md5sum", result;
         if (popen_cmd(cmd, result, 32 + 1) != -1)
         {
-            cout << result << endl;
-            cout << p.result_vector[0]["password_hash"] << endl;
             password_correct = (result == p.result_vector[0]["password_hash"]);
         }
         else
