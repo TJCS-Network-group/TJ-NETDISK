@@ -10,6 +10,7 @@ void Routers::Init_routers()
     setRouter("GET", "/api/get_root_id", GET_get_root_id);
     setRouter("GET", "/api/file_exist", GET_file_exist);
     setRouter("GET", "/api/file_fragment_exist", GET_file_fragment);
+    setRouter("GET", "/api/upload_allocation", GET_upload_allocation);
     setRouter("PUT", "/api/filesystem/rename_file", PUT_filesystem_rename_file);
     setRouter("PUT", "/api/filesystem/rename_dir", PUT_filesystem_rename_dir);
 }

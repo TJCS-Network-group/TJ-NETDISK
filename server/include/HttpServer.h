@@ -38,3 +38,4 @@ HttpResponse GET_file_exist(HttpRequest &req);
 HttpResponse GET_file_fragment(HttpRequest &req);
 HttpResponse PUT_filesystem_rename_file(HttpRequest &req);
 HttpResponse PUT_filesystem_rename_dir(HttpRequest &req);
+HttpResponse GET_upload_allocation(HttpRequest &req);
