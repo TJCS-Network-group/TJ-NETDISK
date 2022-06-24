@@ -45,7 +45,7 @@ HttpResponse POST_upload_fragment(HttpRequest &req)
         cout << "传进来的碎片的文件名： " << file_name << endl; //可以跟client端约定
         // cout << "文件内容： " << file_fragment << endl;
         string savePath = "../pool/" + fragment_md5;
-        if (file_exists(savePath) == false) //文件不存在
+        if (file_exists(savePath) == false) //看看pool中文件不存在（或许可以同时在数据库里查询）
         {
             fstream myf_body(savePath, ios::out | ios::binary); //相对Main来说是上一级目录（要开机自启动可能要改成绝对路径）
             if (myf_body.good())
