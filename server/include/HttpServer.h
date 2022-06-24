@@ -24,11 +24,6 @@ public:
 HttpResponse make_response_json(int _statusCode = 200, std::string _message = "", std::string _data = "{}", bool _success = true);
 
 //要实现的API函数
-HttpResponse GET_test(HttpRequest &req);
-HttpResponse POST_test_gzy(HttpRequest &req);
-HttpResponse POST_test(HttpRequest &req);
-HttpResponse PUT_test(HttpRequest &req);
-HttpResponse DELETE_test(HttpRequest &req);
 HttpResponse POST_login(HttpRequest &req);
 HttpResponse POST_register(HttpRequest &req);
 HttpResponse GET_logout(HttpRequest &req);
@@ -41,3 +36,4 @@ HttpResponse PUT_filesystem_rename_dir(HttpRequest &req);
 HttpResponse GET_upload_allocation(HttpRequest &req);
 HttpResponse GET_download_fragment(HttpRequest &req);
 HttpResponse POST_filesystem_create_dir(HttpRequest &req);
+HttpResponse POST_upload_fragment(HttpRequest &req);

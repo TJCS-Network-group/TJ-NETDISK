@@ -45,11 +45,13 @@ HttpResponse POST_login(HttpRequest &req)
         string cmd = "echo -n " + password + " | md5sum", result;
         if (popen_cmd(cmd, result, 32 + 1) != -1)
         {
+            // cout << result << endl;
+            // cout << p.result_vector[0]["password_hash"] << endl;
             password_correct = (result == p.result_vector[0]["password_hash"]);
         }
         else
         {
-            return make_response_json(500);
+            return make_response_json(500, "popen_err");
         }
     }
     //如果密码正确
@@ -76,7 +78,7 @@ HttpResponse POST_login(HttpRequest &req)
         }
         else
         {
-            return make_response_json(500);
+            return make_response_json(500, "popen_err");
         }
     }
     else
@@ -144,7 +146,7 @@ HttpResponse POST_register(HttpRequest &req)
         }
         else
         {
-            resp = make_response_json(500);
+            resp = make_response_json(500, "popen_err");
         }
     }
     p.disconnect();

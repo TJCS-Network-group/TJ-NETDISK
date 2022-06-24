@@ -106,6 +106,10 @@ int utf82gbk(char *gbkStr, const char *srcStr, int maxGbkStrlen)
 
 string To_gbk(string utf8_str)
 {
+    if (utf8_str == "")
+    {
+        return "";
+    }
     int maxGbkLen = sizeof(char) * utf8_str.length() * 2;
     char *buf = (char *)malloc(maxGbkLen);
     int gbkLen = utf82gbk(buf, utf8_str.c_str(), maxGbkLen);
@@ -123,6 +127,11 @@ string To_gbk(string utf8_str)
 }
 int popen_cmd(string cmd, string &result, const int max_result_len)
 {
+    if (cmd == "")
+    {
+        result = "";
+        return -1;
+    }
     FILE *fp = popen(cmd.c_str(), "r");
     int ans;
     if (fp != NULL)
@@ -140,6 +149,11 @@ int popen_cmd(string cmd, string &result, const int max_result_len)
 }
 int encoding_url(const string &url, string &result)
 {
+    if (url == "")
+    {
+        result = "";
+        return 0;
+    }
     string cmd = "echo -n \"" + url + "\" |tr -d \'\\n\' |od -An -tx1|tr \' \' %";
     if (popen_cmd(cmd, result, 4 * url.size()) == -1)
     {
