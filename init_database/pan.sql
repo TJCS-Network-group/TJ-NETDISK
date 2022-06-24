@@ -12,7 +12,7 @@ create table DirectoryEntity(
 	`id` int primary key AUTO_INCREMENT,
     `dname` varchar(255) not null,
     `parent_id` int not null,
-    `last_change_time` TIMESTAMP not null default current_timestamp
+    `last_change_time` TIMESTAMP NOT NULL default current_timestamp on update current_timestamp
 );
 create table FileEntity(
 	`id` int primary key AUTO_INCREMENT,
@@ -38,7 +38,7 @@ create table FileDirectoryMap(
 	`did` INT not null,
     constraint FDM_did foreign key(`did`) references `DirectoryEntity`(`id`),
 	`fname` VARCHAR(255) NOT NULL,
-	`last_change_time` TIMESTAMP NOT NULL default current_timestamp
+	`last_change_time` TIMESTAMP NOT NULL default current_timestamp on update current_timestamp
 );
 create table UserEntity(
 	`id` INT primary key AUTO_INCREMENT,

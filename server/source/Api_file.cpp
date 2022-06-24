@@ -115,35 +115,61 @@ HttpResponse PUT_filesystem_rename_file(HttpRequest &req)
     {
         return make_response_json(400, "无法操作他人的文件");
     }
-    if (new_name == fname)
-    {
-        return make_response_json(200, "原文件名和修改后重名,无需修改");
-    }
-    sprintf(p.sql, "select * from FileDirectoryMap where did=%d and fname=\"%s\"",
-            did, new_name.c_str());
+    sprintf(p.sql, "select fname from FileDirectoryMap where did=%d and id!=%d",
+            did, id);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.get();
-    if (p.result_vector.size() != 0)
+    set<string> names;
+    for (size_t i = 0; i < p.result_vector.size(); i++)
     {
-        return make_response_json(400, "存在重名文件,修改被取消");
+        names.insert(p.result_vector[i]["fname"]);
+    }
+    int num = 0;
+    string fin_name = new_name;
+    size_t x = new_name.find_last_of(".");
+    while (true)
+    {
+        if (names.find(fin_name) == names.end())
+        {
+            num += 1;
+            fin_name = new_name;
+            if (x == string::npos)
+            {
+                fin_name += '_' + to_string(num);
+            }
+            else
+            {
+                fin_name.insert(x, "_" + to_string(num));
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+    if (fin_name == fname)
+    {
+        return make_response_json(200, "新文件夹名和原文件名相同或和其他文件夹存在冲突,修改被取消");
     }
     sprintf(p.sql, "update FileDirectoryMap set fname=\"%s\" where id=%d",
-            new_name.c_str(), id);
+            fin_name.c_str(), id);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.disconnect();
-    return make_response_json(200, "改名成功");
+    set<string>().swap(names);
+    message = "文件改名成功,新名为" + fin_name;
+    return make_response_json(200, message);
 }
 HttpResponse GET_upload_allocation(HttpRequest &req)
 {
     if (req.current_user_id == 0)
     {
-        return make_response_json(404, "当前用户未登录");
+        return make_response_json(401, "当前用户未登录");
     }
     if (req.params.find("md5") == req.params.end())
     {
@@ -241,4 +267,98 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
     }
     p.disconnect();
     return make_response_json(200, "需要的下一块为", data);
+}
+HttpResponse POST_share_move_file(HttpRequest &req)
+{
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(401, "当前用户未登录");
+    }
+    map<string, JSON> data = req.json.as_map();
+    if (data.find("fdid") == data.end() || data.find("did") == data.end())
+    {
+        return make_response_json(400, "请求格式不对");
+    }
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
+    {
+        return make_response_json(-current_root_id, message);
+    }
+    int fdid = data["fdid"].as_int();
+    int did = data["did"].as_int();
+    my_database p;
+    p.connect();
+    sprintf(p.sql, "select did,fname from FileDirectoryMap where id=%d", fdid);
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库查询出错");
+    }
+    p.get();
+    if (p.result_vector.size() == 0)
+    {
+        return make_response_json(400, "移动了不存在的文件");
+    }
+    int f_in_did = atoi(p.result_vector[0]["did"].c_str());
+    string fname = p.result_vector[0]["fname"];
+    int f_root_id = get_root_id_by_did(f_in_did, message);
+    if (f_root_id < 0)
+    {
+        return make_response_json(-f_root_id, message);
+    }
+    if (f_root_id != current_root_id)
+    {
+        return make_response_json(400, "不可移动他人的文件");
+    }
+    int d_root_id = get_root_id_by_did(did, message);
+    if (d_root_id < 0)
+    {
+        return make_response_json(-d_root_id, message);
+    }
+    if (d_root_id != current_root_id)
+    {
+        return make_response_json(400, "不可移动到他人的文件夹");
+    }
+    set<string> names;
+    sprintf(p.sql, "select fname from FileDirectoryMap where did=%d", did);
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库查询出错");
+    }
+    p.get();
+    for (size_t i = 0; i < p.result_vector.size(); i++)
+    {
+        names.insert(p.result_vector[i]["dname"]);
+    }
+    int num = 0;
+    string fin_name = fname;
+    size_t x = fname.find_last_of(".");
+    while (true)
+    {
+        if (names.find(fin_name) == names.end())
+        {
+            num += 1;
+            fin_name = fname;
+            if (x == string::npos)
+            {
+                fin_name += '_' + to_string(num);
+            }
+            else
+            {
+                fin_name.insert(x, "_" + to_string(num));
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+    sprintf(p.sql, "update FileDirectoryMap set did=%d,fname=\"%s\" where id=%d", did, fin_name.c_str());
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库修改失败,请联系管理员");
+    }
+    p.disconnect();
+    message = "移动成功,新文件名为" + fin_name;
+    return make_response_json(200, message);
 }
