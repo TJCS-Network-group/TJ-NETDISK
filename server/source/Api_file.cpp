@@ -452,7 +452,7 @@ HttpResponse POST_share_copy_file(HttpRequest &req)
             break;
         }
     }
-    sprintf(p.sql, "insert into FileDirectoryMap(fid,did,fname) value (%d,%d,\"%s\")", fid, pid, fin_name.c_str());
+    sprintf(p.sql, "insert into FileDirectoryMap(fid,did,fname) value (%d,%d,\"%s\");", fid, pid, fin_name.c_str());
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库新增失败,请联系管理员");
