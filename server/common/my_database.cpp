@@ -126,34 +126,6 @@ int get_root_id_by_user(int user_id, string &message)
     message = "查询结果如下";
     return root_id;
 }
-int get_root_id_by_did(int directory_id, string &message)
-{
-    my_database p;
-    p.connect();
-    int child, parent;
-    child = 0;
-    parent = directory_id;
-    while (child != parent)
-    {
-        child = parent;
-        sprintf(p.sql, "select parent_id from DirectoryEntity where id=%d", child);
-        if (p.execute() == -1)
-        {
-            message = "数据库查询出错,请联系管理员解决问题";
-            return -500;
-        }
-        p.get();
-        if (p.result_vector.size() == 0)
-        {
-            message = "查询了不存在的文件夹";
-            return -404;
-        }
-        parent = atoi(p.result_vector[0]["parent_id"].c_str());
-    }
-    p.disconnect();
-    message = "查询结果如下";
-    return parent;
-}
 int is_child(int first, int second, string &message)
 {
     if (first == second)
