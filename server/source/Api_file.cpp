@@ -209,34 +209,35 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
             data += "\"next_index\":" + p.result_vector[0]["next_index"];
             int max_index = atoi(p.result_vector[0]["fsize"].c_str()) / FRAGMENT_SIZE + 1;
             int now_index = atoi(p.result_vector[0]["next_index"].c_str());
-            if (now_index == max_index - 1)
+            set<int> indexs;
+            for (int i = 0; i < max_index; i++)
             {
-                set<int> indexs;
-                for (int i = 0; i < max_index; i++)
-                {
-                    indexs.insert(i);
-                }
-                sprintf(p.sql, "select index from FileFragmentMap \
+                indexs.insert(i);
+            }
+            sprintf(p.sql, "select index from FileFragmentMap \
             join FileEntity on FileEntity.id=FileFragmentMap.fid where FileEntity.md5=\"%s\"",
-                        md5.c_str());
-                if (p.execute() == -1)
-                {
-                    return make_response_json(500, "数据库查询失败,请联系管理员解决问题");
-                }
-                p.get();
-                for (size_t i = 0; i < p.result_vector.size(); i++)
-                {
-                    indexs.erase(atoi(p.result_vector[i]["index"].c_str()));
-                }
-                if (indexs.size() != 0)
-                {
-                    now_index = *indexs.begin();
-                    sprintf(p.sql, "update FileEntity set next_index=%d where md5=\"%s\"", now_index, md5.c_str());
-                    if (p.execute() == -1)
-                    {
-                        return make_response_json(500, "数据库查询失败,请联系管理员解决问题");
-                    }
-                }
+                    md5.c_str());
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询失败,请联系管理员解决问题");
+            }
+            p.get();
+            for (size_t i = 0; i < p.result_vector.size(); i++)
+            {
+                indexs.erase(atoi(p.result_vector[i]["index"].c_str()));
+            }
+            if (now_index == *indexs.begin())
+            {
+                now_index = *(++indexs.begin());
+            }
+            else
+            {
+                now_index = *indexs.begin();
+            }
+            sprintf(p.sql, "update FileEntity set next_index=%d where md5=\"%s\"", now_index, md5.c_str());
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库更新出错,请联系系统管理员");
             }
         }
         else
