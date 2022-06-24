@@ -20,7 +20,7 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     }
     else
         disconnect = false;
-    int lastcur = 0, cur = 0, line = 1, cnt = 0;
+    int lastcur = 0, cur = 0, cnt = 0;
     //解析第一行
     while (true)
     {
@@ -159,7 +159,18 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     }
     cout << "current_user_id:" << current_user_id << endl;
 }
-
+int find_name_form_data(string &content, string &find_name, string &result)
+{
+    size_t find_name_pos = content.find(find_name);
+    if (find_name_pos == content.npos)
+        return -1;
+    size_t name_pos_begin = find_name_pos + find_name.length();
+    size_t name_pos_end = content.find("\"", name_pos_begin);
+    if (name_pos_end == content.npos)
+        return -1;
+    result = content.substr(name_pos_begin, name_pos_end - name_pos_begin);
+    return 0;
+}
 void HttpRequest::Parse_request_body()
 {
     if (headers.count("Content-Type") != 0)
@@ -179,6 +190,62 @@ void HttpRequest::Parse_request_body()
             size_t pos = type.find("multipart/form-data");
             if (pos != type.npos)
             { //找到了子串"multipart/form-data"，是form-data
+                string boundary = "boundary=";
+                pos = type.find(boundary);
+                if (pos != type.npos)
+                {
+                    pos += boundary.size();
+                    boundary = "--" + type.substr(pos);
+                    // cout << boundary << endl;
+                    size_t next_pos = 0;
+                    string key, value, filename;
+                    while (true)
+                    {
+                        pos = body.find(boundary, next_pos); //一般来说一定能找到
+                        if (pos == body.npos)
+                            break;
+                        pos += boundary.length() + 2;        //跳过\r\n
+                        next_pos = body.find(boundary, pos); //下一个
+                        if (next_pos == body.npos)
+                            break;
+                        string content = body.substr(pos, next_pos - pos);
+                        cout << content << endl;
+                        size_t line_1_pos = content.find("\r\n");
+                        string content_line_1 = content.substr(0, line_1_pos);
+
+                        string find_filename = "filename=\"";
+                        if (find_name_form_data(content_line_1, find_filename, filename) != -1)
+                        {
+                            form_data["filename"] = To_gbk(filename);
+                            string find_name = "name=\"";
+                            if (find_name_form_data(content_line_1, find_name, key) == -1)
+                                break;
+                            for (size_t i = line_1_pos; i < content.size(); ++i)
+                            {
+                                if (content[i] == '\n' && content[i - 1] == '\r' && content[i - 2] == '\n' && content[i - 3] == '\r')
+                                {
+                                    size_t begin_pos = i + 1;
+                                    size_t value_len = content.length() - begin_pos - 2; //最后还有一个\r\n
+                                    string value = content.substr(begin_pos, value_len);
+                                    form_data[To_gbk(key)] = To_gbk(value);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            string find_name = "name=\"";
+                            if (find_name_form_data(content_line_1, find_name, key) == -1)
+                                break;
+                            string value = content.substr(line_1_pos + 4, content.length() - (line_1_pos + 4) - 2); //开头两个\r\n 最后还有一个\r\n
+                            form_data[To_gbk(key)] = To_gbk(value);
+                        }
+                    }
+                }
+                cout << "Form_data:" << endl;
+                for (auto i : form_data)
+                {
+                    cout << i.first << ":" << i.second << endl;
+                }
             }
         }
         {
@@ -189,11 +256,6 @@ void HttpRequest::Parse_request_body()
                 {
                     cerr << "popen fail" << endl;
                     exit(-1);
-                }
-                cout << "Form_data:" << endl;
-                for (auto i : form_data)
-                {
-                    cout << i.first << ":" << i.second << endl;
                 }
             }
         }
