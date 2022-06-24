@@ -297,12 +297,17 @@ HttpResponse POST_share_move_dir(HttpRequest &req)
     }
     my_database p;
     p.connect();
-    sprintf(p.sql, "select dname from DirectoryEntity where id=%d", did);
+    sprintf(p.sql, "select dname,parent_id from DirectoryEntity where id=%d", did);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员检查");
     }
     p.get();
+    int parent_id = atoi(p.result_vector[0]["parent_id"].c_str());
+    if (parent_id == pid)
+    {
+        return make_response_json(200, "文件夹无需移动");
+    }
     string dname = p.result_vector[0]["dname"];
     sprintf(p.sql, "select dname from DirectoryEntity where parent_id=%d and id!=%d", pid, pid);
     if (p.execute() == -1)
