@@ -73,7 +73,7 @@ HttpResponse POST_login(HttpRequest &req)
             {
                 cout << i.first << ":" << i.second << endl;
             }*/
-            resp.setHeader("Set-Cookie: remember_token=" + to_string(user_id) + "|" + result);
+            resp.setHeader("Set-Cookie: sessionid=" + to_string(user_id) + "|" + result + "; HttpOnly; Path=/;");
             //给client的set-cookie，没设置expires,即仅限于此次回话
         }
         else
@@ -160,6 +160,6 @@ HttpResponse GET_logout(HttpRequest &req)
     if (session.count(req.current_user_id))
         session.erase(req.current_user_id);
     resp = make_response_json(200);
-    resp.setHeader("Set-Cookie: remember_token=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; Path=/");
+    resp.setHeader("Set-Cookie: sessionid=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; Path=/");
     return resp;
 }
