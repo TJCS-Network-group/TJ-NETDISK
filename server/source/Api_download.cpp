@@ -41,7 +41,10 @@ HttpResponse GET_download_fragment(HttpRequest &req)
     }
     string file_path = "../pool/" + p.result_vector[0]["MD5"];
     // string file_path = "./request_file/sjk.png"; //碎片的地址
-    string file_value = FileToStr(file_path);
+    string file_value;
+
+    if (FileToStr(file_path, file_value) == -1)
+        return make_response_json(500, "pool中找不到文件");
     HttpResponse resp;
     resp.setHeader("Content-Type: application/octet-stream");            //直接传输二进制
     resp.setHeader("Content-Length: " + to_string(file_value.length())); //长度

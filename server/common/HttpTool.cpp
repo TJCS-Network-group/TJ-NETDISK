@@ -9,7 +9,7 @@
 using namespace std;
 
 //本地文件转成string
-string FileToStr(string filepath)
+int FileToStr(string filepath, string &result)
 {
     fstream f(filepath, ios::in | ios::binary);
     if (f.good())
@@ -17,12 +17,13 @@ string FileToStr(string filepath)
         f.unsetf(ios::skipws); // 关闭inputFile的忽略空格标志,可以文件中的保留空格
         istream_iterator<char> iter(f);
         string s(iter, istream_iterator<char>());
-        return s;
+        result = s;
+        return 0;
     }
     else
     {
         cout << "Can't open file!Srcfile path error!" << endl;
-        exit(EXIT_FAILURE);
+        return -1;
     }
 }
 
