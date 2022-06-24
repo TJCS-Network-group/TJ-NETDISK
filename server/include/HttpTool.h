@@ -2,7 +2,7 @@
 #pragma once
 #include <map>
 #include <string>
-#define FRAGMENT_SIZE 4 * 1024 * 1024
+#define FRAGMENT_SIZE (4 * 1024 * 1024)
 std::string FileToStr(std::string filepath);
 std::string bool_to_string(bool _success);
 std::string To_gbk(std::string utf8_str);

@@ -175,11 +175,11 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
     p.get();
     if (p.result_vector.size() == 0)
     {
-        if (req.params.find("fsize") == req.params.end())
+        if (req.params.find("size") == req.params.end())
         {
             return make_response_json(400, "无文件大小无法新建项目");
         }
-        int fsize = atoi(req.params["fsize"].c_str());
+        int fsize = atoi(req.params["size"].c_str());
         if (fsize < 0)
         {
             return make_response_json(400, "不存在负数大小的文件");
@@ -191,14 +191,14 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         {
             return make_response_json(500, "数据库查询新建,请联系管理员解决问题");
         }
-        data += "\"next_index\":0";
+        data += "{\"next_index\":0}";
         return make_response_json(200, "需要的下一块为", data);
     }
     else if (p.result_vector.size() == 1)
     {
-        if (req.params.find("fsize") != req.params.end())
+        if (req.params.find("size") != req.params.end())
         {
-            if (atoi(req.params["fsize"].c_str()) != atoi(p.result_vector[0]["fsize"].c_str()))
+            if (atoi(req.params["size"].c_str()) != atoi(p.result_vector[0]["fsize"].c_str()))
             {
                 return make_response_json(400, "文件大小指定错误");
             }
@@ -206,35 +206,42 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         if (atoi(p.result_vector[0]["is_complete"].c_str()) == 0)
         {
             // check()
-            data += "\"next_index\":" + p.result_vector[0]["next_index"];
+            data += "{\"next_index\":" + p.result_vector[0]["next_index"] + '}';
             int max_index = atoi(p.result_vector[0]["fsize"].c_str()) / FRAGMENT_SIZE + 1;
             int now_index = atoi(p.result_vector[0]["next_index"].c_str());
+            int next_index = -1;
             set<int> indexs;
             for (int i = 0; i < max_index; i++)
             {
                 indexs.insert(i);
             }
-            sprintf(p.sql, "select index from FileFragmentMap \
-            join FileEntity on FileEntity.id=FileFragmentMap.fid where FileEntity.md5=\"%s\"",
+            sprintf(p.sql, "select `index` from FileFragmentMap \
+            join FileEntity on FileEntity.id=FileFragmentMap.fid where FileEntity.md5=\"%s\" and `index` > %d",
                     md5.c_str());
             if (p.execute() == -1)
             {
                 return make_response_json(500, "数据库查询失败,请联系管理员解决问题");
             }
             p.get();
+            cout << "has upload:" << p.result_vector.size();
             for (size_t i = 0; i < p.result_vector.size(); i++)
             {
                 indexs.erase(atoi(p.result_vector[i]["index"].c_str()));
             }
-            if (now_index == *indexs.begin())
+
+            for (auto it = indexs.begin(); it != indexs.end(); it++)
             {
-                now_index = *(++indexs.begin());
+                if (*it > now_index)
+                {
+                    next_index = *it;
+                    break;
+                }
             }
-            else
+            if (next_index == -1)
             {
-                now_index = *indexs.begin();
+                next_index = *indexs.begin();
             }
-            sprintf(p.sql, "update FileEntity set next_index=%d where md5=\"%s\"", now_index, md5.c_str());
+            sprintf(p.sql, "update FileEntity set next_index=%d where md5=\"%s\"", next_index, md5.c_str());
             if (p.execute() == -1)
             {
                 return make_response_json(500, "数据库更新出错,请联系系统管理员");
@@ -242,7 +249,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         }
         else
         {
-            data += "\"next_index\":-1";
+            data += "{\"next_index\":-1}";
             return make_response_json(200, "需要的下一块为", data);
         }
     }
