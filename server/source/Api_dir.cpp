@@ -342,6 +342,64 @@ HttpResponse POST_share_move_dir(HttpRequest &req)
     message = "移动文件夹成功,新文件夹名为" + fin_name;
     return make_response_json(200, message);
 }
+HttpResponse POST_share_copy_dir(HttpRequest &req)
+{
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(401, "当前用户未登录");
+    }
+    map<string, JSON> data = req.json.as_map();
+    if (data.find("pid") == data.end() || data.find("did") == data.end())
+    {
+        return make_response_json(400, "请求格式不对");
+    }
+    int pid = data["pid"].as_int();
+    int did = data["did"].as_int();
+    if (pid == did)
+    {
+        return make_response_json(400, "不可将文件夹复制到自己内");
+    }
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
+    {
+        return make_response_json(-current_root_id, message);
+    }
+    if (did == current_root_id)
+    {
+        return make_response_json(400, "不可复制根文件夹");
+    }
+    int d_check = is_child(did, current_root_id, message);
+    if (d_check < 0)
+    {
+        return make_response_json(-d_check, message);
+    }
+    if (!d_check && did != current_root_id)
+    {
+        return make_response_json(400, "不可复制他人的文件夹");
+    }
+    int p_check = is_child(pid, current_root_id, message);
+    if (p_check < 0)
+    {
+        return make_response_json(-p_check, message);
+    }
+    if (!p_check && pid != current_root_id)
+    {
+        return make_response_json(400, "不可复制至他人的文件夹");
+    }
+    int check = is_child(pid, did, message);
+    if (check < 0)
+    {
+        return make_response_json(-check, message);
+    }
+    else if (check == 1)
+    {
+        return make_response_json(400, "不可将文件夹复制到其子文件夹下");
+    }
+
+    return make_response_json(200, "复制完成");
+}
+
 HttpResponse DEL_remove_dir(HttpRequest &req)
 {
     if (req.current_user_id == 0)
