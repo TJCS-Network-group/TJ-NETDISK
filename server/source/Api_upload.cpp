@@ -163,6 +163,7 @@ bool check_file_name_legal(string file_name)
     }
     return true;
 }
+
 HttpResponse POST_upload_file(HttpRequest &req)
 {
     if (req.current_user_id == 0) //没登录
@@ -206,6 +207,22 @@ HttpResponse POST_upload_file(HttpRequest &req)
     add_map.get();
     if (add_map.result_vector.size() == 0)
         return make_response_json(500, "数据库表项中不存在该目录");
+    string message = "";
+    int current_user_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_user_root_id < 0)
+    {
+        return make_response_json(-current_user_root_id, message)
+    }
+    else
+    {
+        int status = is_child(parent_dir_id, current_user_root_id, message);
+        if (current_user_root_id == parent_dir_id || status > 0) //是父子关系或者就是当前用户根目录，则无事发生
+            ;
+        else if (status < 0) //查询出错
+            return make_response_json(-status, message);
+        else //两个文件夹压根没有关系，分属于不同用户
+            return make_response_json(401, "您无法访问其它用户的文件夹");
+    }
 
     //检查文件名
     if (check_file_name_legal(file_name) == false)
@@ -216,9 +233,13 @@ HttpResponse POST_upload_file(HttpRequest &req)
         sprintf(add_map.sql, "insert into `FileDirectoryMap`(`fid`,`did`,`fname`) value(%d,%d,%s)", file_id, parent_dir_id, file_name.c_str());
         if (add_map.execute() == -1)
             return make_response_json(500, "数据库插入出错,请联系管理员解决问题");
+        sprintf(add_map.sql, "update `FileEntity` set link_num=link_num+1 where id=%d", file_id);
+        if (add_map.execute() == -1)
+            return make_response_json(500, "数据库修改出错,请联系管理员解决问题");
     }
     else
     {
         return make_response_json(400, "文件尚未完整上传，请先上传碎片！");
     }
+    return make_response_json();
 }
