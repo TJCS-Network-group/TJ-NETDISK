@@ -177,7 +177,7 @@ void HttpRequest::Parse_request_body()
     if (headers.count("Content-Type") != 0)
     {
         string type = headers["Content-Type"];
-        cout << type << endl;
+        // cout << type << endl;
         {
             size_t pos = type.find("application/json");
             if (pos != type.npos)
@@ -210,7 +210,7 @@ void HttpRequest::Parse_request_body()
                         if (next_pos == body.npos)
                             break;
                         string content = body.substr(pos, next_pos - pos);
-                        cout << content << endl;
+                        // cout << content << endl;
                         size_t line_1_pos = content.find("\r\n");
                         string content_line_1 = content.substr(0, line_1_pos);
 
