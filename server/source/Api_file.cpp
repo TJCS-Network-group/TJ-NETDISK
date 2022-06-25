@@ -199,7 +199,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         }
         sprintf(p.sql, "insert into FileEntity(MD5,fsize,link_num,next_index,is_complete)\
          value (\"%s\",%d,%d,%d,%d)",
-                md5.c_str(), fsize, 1, 0, 0);
+                md5.c_str(), fsize, 0, 0, 0); // link设置为1，上传完成后才设置为0
         if (p.execute() == -1)
         {
             return make_response_json(500, "数据库查询新建,请联系管理员解决问题");
