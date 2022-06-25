@@ -151,3 +151,74 @@ HttpResponse POST_upload_fragment(HttpRequest &req)
 
     return make_response_json(200);
 }
+bool check_file_name_legal(string file_name)
+{
+    if (file_name == "")
+        return false;
+    char illegal_chars[10] = {'\\', '/', '*', '?', '\"', '<', '>', '|'};
+    for (char ch : illegal_chars)
+    {
+        if (file_name.find(ch) != file_name.npos)
+            return false;
+    }
+    return true;
+}
+HttpResponse POST_upload_file(HttpRequest &req)
+{
+    if (req.current_user_id == 0) //没登录
+    {
+        return make_response_json(401, "请先登录");
+    }
+    string file_md5, file_name;
+    int parent_dir_id;
+
+    try
+    {
+        file_md5 = req.json["md5"].as_string();
+        parent_dir_id = req.json["parent_dir_id"].as_int();
+        file_name = req.json["file_name"].as_string();
+    }
+    catch (exception e)
+    {
+        return make_response_json(400, "请求格式不对");
+    }
+
+    //数据库操作
+    my_database add_map;
+    add_map.connect();
+    //检查文件
+    sprintf(add_map.sql, "select is_complete,id from FileEntity where MD5=\"%s\"", file_md5.c_str());
+    // cout << add_map.sql << endl;
+    if (add_map.execute() == -1)
+        return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
+    add_map.get();
+    if (add_map.result_vector.size() == 0)
+        return make_response_json(500, "数据库表项中不存在该文件！请检查upload_allocate接口");
+    int file_id = atoi(add_map.result_vector[0]["id"].c_str());
+    cout << "is_complete: " << atoi(add_map.result_vector[0]["is_complete"].c_str());
+    bool is_complete = atoi(add_map.result_vector[0]["is_complete"].c_str());
+
+    //检查目录
+    sprintf(add_map.sql, "select id from DirectoryEntity where parent_id=\"%d\"", parent_dir_id);
+    // cout << add_map.sql << endl;
+    if (add_map.execute() == -1)
+        return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
+    add_map.get();
+    if (add_map.result_vector.size() == 0)
+        return make_response_json(500, "数据库表项中不存在该目录");
+
+    //检查文件名
+    if (check_file_name_legal(file_name) == false)
+        return make_response_json(400, "文件名有误");
+
+    if (is_complete)
+    {
+        sprintf(add_map.sql, "insert into `FileDirectoryMap`(`fid`,`did`,`fname`) value(%d,%d,%s)", file_id, parent_dir_id, file_name.c_str());
+        if (add_map.execute() == -1)
+            return make_response_json(500, "数据库插入出错,请联系管理员解决问题");
+    }
+    else
+    {
+        return make_response_json(400, "文件尚未完整上传，请先上传碎片！");
+    }
+}
