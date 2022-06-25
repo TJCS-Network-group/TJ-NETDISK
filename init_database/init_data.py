@@ -1,4 +1,3 @@
-#!/bin/bash python3
 # -*- coding: gbk -*-
 from copy import deepcopy
 import os
