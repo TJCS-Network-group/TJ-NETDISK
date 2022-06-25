@@ -1,8 +1,27 @@
 {
-    "files.associations": {
-        "*.service": "cmake",
-        "bitset": "cpp",
-        "set": "cpp",
-        "iostream": "cpp"
-    }
+    "python.formatting.provider": "yapf",
+    "files.autoGuessEncoding": false,
+    "files.eol": "\n",
+    "[html]": {
+        "files.encoding": "utf8"
+    },
+    "[python]": {
+        "files.encoding": "gbk"
+    },
+    "[plaintext]": {
+        "editor.unicodeHighlight.ambiguousCharacters": false,
+        "editor.unicodeHighlight.invisibleCharacters": false,
+        "files.encoding": "gbk"
+    },
+    "[conf]": {
+        "files.encoding": "gbk"
+    },
+    "[markdown]": {
+        "editor.unicodeHighlight.ambiguousCharacters": false,
+        "editor.unicodeHighlight.invisibleCharacters": false,
+        "editor.wordWrap": "on",
+        "files.encoding": "utf8"
+    },
+    "editor.tabSize": 4,
+    "editor.formatOnSave": true
 }

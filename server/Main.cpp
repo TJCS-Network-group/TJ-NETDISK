@@ -150,7 +150,6 @@ int main()
     {
         // wait阻塞线程，等待事件
         int ndfs = epoll_wait(epollfd, events, MAX_EPOLL_EVENT, -1);
-        cout << "ndfs: " << ndfs << endl;
         if (ndfs == -1)
         {
             cerr << "Error: epoll_wait" << endl;
@@ -195,14 +194,17 @@ int main()
 
                 if (new_request.disconnect == true) // recv出来len=0, 对方断开
                 {
-                    close(sockfd); //断开
-                    sockfd = -1;
                     //我们的所有cookie都只限于本次回话，disconnect之后要从session中删掉
                     if (session.count(new_request.current_user_id) != 0)
                         session.erase(new_request.current_user_id);
-                    cout << "disconnect" << endl;
-                    // cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
-                    continue;
+                    struct sockaddr_in clientAddr;
+                    socklen_t clientAddrLen = sizeof(clientAddr);
+                    char clientIP[INET_ADDRSTRLEN] = "";
+                    getpeername(sockfd, (struct sockaddr *)&clientAddr, &clientAddrLen);
+                    inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, INET_ADDRSTRLEN);
+                    cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
+                    close(sockfd); //断开
+                    sockfd = -1;
                 }
                 else
                 {

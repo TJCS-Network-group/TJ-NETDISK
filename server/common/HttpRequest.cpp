@@ -113,14 +113,13 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     }
     origin_headers = _raw_http_request.substr(0, cur - 2);
     body = _raw_http_request.substr(cur);
-    // cout << body << endl;
-
+    /*
     cout << "PARAMS:" << endl;
     for (auto i : params)
     {
         cout << i.first << ':' << i.second << endl;
     }
-    /*
+
     cout << "HEADERS:" << endl;
     for (auto i : headers)
     {
@@ -153,7 +152,7 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
 
             if (session.count(current_user_id) == 0 || md5 != session[current_user_id])
             { //与session中的表项对比
-                cout << "cookie错误！" << endl;
+                // cout << "cookie错误！" << endl;
                 current_user_id = 0;
             }
         }
