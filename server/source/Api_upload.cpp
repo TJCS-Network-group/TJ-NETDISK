@@ -211,7 +211,7 @@ HttpResponse POST_upload_file(HttpRequest &req)
     int current_user_root_id = get_root_id_by_user(req.current_user_id, message);
     if (current_user_root_id < 0)
     {
-        return make_response_json(-current_user_root_id, message)
+        return make_response_json(-current_user_root_id, message);
     }
     else
     {
