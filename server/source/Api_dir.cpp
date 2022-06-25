@@ -589,7 +589,7 @@ HttpResponse GET_share_get_dir_tree(HttpRequest &req)
             {
                 data += ',';
             }
-            data += "{\"label\":\"" + floor[now].second + "\",\"did\":" + to_string(floor[now].first) + "\"isopen\":true" + ",\"children\":[";
+            data += "{\"label\":\"" + floor[now].second + "\",\"did\":" + to_string(floor[now].first) + ",\"isopen\":true" + ",\"children\":[";
             dir_now.pop();
             dir_now.push(now + 1);
             sprintf(p.sql, "select id,dname from DirectoryEntity where parent_id=%d and id!=%d", floor[now].first, floor[now].first);
