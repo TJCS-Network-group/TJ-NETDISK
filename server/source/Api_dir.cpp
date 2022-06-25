@@ -546,3 +546,67 @@ HttpResponse DEL_remove_dir(HttpRequest &req)
     }
     return make_response_json(200, "删除成功");
 }
+HttpResponse GET_share_get_dir_tree(HttpRequest &req)
+{
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(401, "当前用户未登录");
+    }
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
+    {
+        return make_response_json(-current_root_id, message);
+    }
+    cout << "root:" << current_root_id << endl;
+    int now, statusCode, fid;
+    vector<pair<int, string>> floor, next;
+    stack<int> dir_now;
+    stack<vector<pair<int, string>>> dir_tree;
+    floor.push_back(make_pair(current_root_id, "root"));
+    dir_tree.push(floor);
+    dir_now.push(0);
+    vector<pair<int, string>>().swap(floor);
+    string data = "";
+    my_database p;
+    p.connect();
+    while (!dir_now.empty())
+    {
+        now = dir_now.top();
+        floor = dir_tree.top();
+        if (now == floor.size())
+        {
+            dir_now.pop();
+            dir_tree.pop();
+            if (dir_now.size() > 0)
+            {
+                data += "]}";
+            }
+        }
+        else
+        {
+            if (now > 0)
+            {
+                data += ',';
+            }
+            data += "{\"label\":\"" + floor[now].second + "\",\"did\":" + to_string(floor[now].first) + ",\"children\":[";
+            dir_now.pop();
+            dir_now.push(now + 1);
+            sprintf(p.sql, "select id,dname from DirectoryEntity where parent_id=%d and id!=%d", floor[now].first, floor[now].first);
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询错误");
+            }
+            p.get();
+            for (size_t i = 0; i < p.result_vector.size(); i++)
+            {
+                next.push_back(make_pair(atoi(p.result_vector[i]["id"].c_str()), p.result_vector[i]["dname"]));
+            }
+            dir_tree.push(next);
+            vector<pair<int, string>>().swap(next);
+            dir_now.push(0);
+        }
+    }
+    cout << data << endl;
+    return make_response_json(200, "树形目录如下", data);
+}
