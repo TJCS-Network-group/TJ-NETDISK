@@ -41,3 +41,4 @@ HttpResponse POST_share_move_file(HttpRequest &req);
 HttpResponse POST_share_copy_file(HttpRequest &req);
 HttpResponse POST_share_move_dir(HttpRequest &req);
 HttpResponse DEL_remove_file(HttpRequest &req);
+HttpResponse DEL_remove_dir(HttpRequest &req);

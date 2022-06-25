@@ -20,4 +20,5 @@ void Routers::Init_routers()
     setRouter("POST", "/api/share/copy_file", POST_share_copy_file);
     setRouter("POST", "/api/share/move_dir", POST_share_move_dir);
     setRouter("DELETE", "/api/remove_file", DEL_remove_file);
+    setRouter("DELETE", "/api/remove_dir", DEL_remove_dir);
 }

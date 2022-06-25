@@ -1,4 +1,5 @@
 #include "../include/my_database.h"
+#include "../include/HttpTool.h"
 #include <iostream> // cin,cout等
 #include <iomanip>  // setw等
 #include <cstdlib>
@@ -162,4 +163,128 @@ int is_child(int first, int second, string &message)
     }
     p.disconnect();
     return result;
+}
+int remove_file(int file_dir_id, int current_root_id, bool is_checked, string &message)
+{
+    my_database p;
+    p.connect();
+    sprintf(p.sql, "select fid,did from FileDirectoryMap where id=%d", file_dir_id);
+    if (p.execute() == -1)
+    {
+        message = "数据查询出错";
+        return -500;
+    }
+    p.get();
+    if (p.result_vector.size() == 0)
+    {
+        message = "试图删除不存在的文件";
+        return -400;
+    }
+    int file_id = atoi(p.result_vector[0]["fid"].c_str());
+    int did = atoi(p.result_vector[0]["did"].c_str());
+    int check;
+    if (!is_checked)
+    {
+        check = is_child(did, current_root_id, message);
+        if (check < 0)
+        {
+            return check;
+        }
+        if (!check && did != current_root_id)
+        {
+            message = "不可删除他人的文件";
+            return -400;
+        }
+    }
+    sprintf(p.sql, "delete from FileDirectoryMap where id=%d", file_dir_id);
+    if (p.execute() == -1)
+    {
+        message = "数据库删除出现错误";
+        return -500;
+    }
+    sprintf(p.sql, "select link_num from FileEntity where id=%d", file_id);
+    if (p.execute() == -1)
+    {
+        message = "数据库查询出现问题";
+        return -500;
+    }
+    p.get();
+    int link_num = atoi(p.result_vector[0]["link_num"].c_str());
+    int sub_link_num, sub_id;
+    string sub_path;
+    if (link_num == 0)
+    {
+        //?
+    }
+    else if (link_num > 1)
+    {
+        sprintf(p.sql, "update FileEntity set link_num=link_num-1 where id=%d", file_id);
+        if (p.execute() == -1)
+        {
+            message = "数据库更新出现问题";
+            return -500;
+        }
+    }
+    else
+    {
+        sprintf(p.sql, "select FileFragmentEntity.id as id,FileFragmentEntity.MD5 as MD5,FileFragmentEntity.link_num as link_num\
+         from FileFragmentMap join FileFragmentEntity on FileFragmentEntity.id=FileFragmentMap.fgid\
+            where FileFragmentMap.fid=%d",
+                file_id);
+        if (p.execute() == -1)
+        {
+            message = "数据库查询出现问题";
+            return -500;
+        }
+        p.get();
+        vector<map<string, string>> result = p.result_vector;
+        sprintf(p.sql, "delete from FileFragmentMap where fid=%d", file_id);
+        if (p.execute() == -1)
+        {
+            message = "数据库删除出现问题";
+            return -500;
+        }
+        for (size_t i = 0; i < result.size(); i++)
+        {
+            sub_link_num = atoi(result[i]["link_num"].c_str());
+            sub_id = atoi(result[i]["id"].c_str());
+            if (sub_link_num > 1)
+            {
+                sprintf(p.sql, "update FileFragmentEntity set link_num=link_num-1 where id=%d", sub_id);
+                if (p.execute() == -1)
+                {
+                    message = "数据库更新出现问题";
+                    return -500;
+                }
+            }
+            else
+            {
+                sprintf(p.sql, "delete from FileFragmentEntity where id=%d", sub_id);
+                if (p.execute() == -1)
+                {
+                    message = "数据库删除出现问题";
+                    return -500;
+                }
+                sub_path = "../pool/" + result[i]["MD5"];
+                if (file_exists(sub_path))
+                {
+                    remove(sub_path.c_str());
+                }
+                else
+                {
+                    message = "数据库存储了不应存在的文件碎片" + sub_path;
+                    return -500;
+                }
+            }
+        }
+        sprintf(p.sql, "delete from FileEntity where id=%d", file_id);
+        if (p.execute() == -1)
+        {
+            message = "数据库删除出现问题";
+            return -500;
+        }
+    }
+    message = "删除成功";
+    p.disconnect();
+    return 0;
 }

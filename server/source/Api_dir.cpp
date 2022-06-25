@@ -342,3 +342,82 @@ HttpResponse POST_share_move_dir(HttpRequest &req)
     message = "移动文件夹成功,新文件夹名为" + fin_name;
     return make_response_json(200, message);
 }
+HttpResponse DEL_remove_dir(HttpRequest &req)
+{
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(401, "当前用户未登录");
+    }
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
+    {
+        return make_response_json(-current_root_id, message);
+    }
+    map<string, JSON> data = req.json.as_map();
+    if (data.find("dir_id") == data.end())
+    {
+        return make_response_json(400, "请求格式不对");
+    }
+    int did = data["dir_id"].as_int();
+    if (did == current_root_id)
+    {
+        return make_response_json(400, "用户无权删除根目录");
+    }
+    int check = is_child(did, current_root_id, message);
+    if (check < 0)
+    {
+        return make_response_json(-check, message);
+    }
+    if (!check)
+    {
+        return make_response_json(400, "用户无权删除他人目录");
+    }
+    my_database p;
+    p.connect();
+    set<int> all_del_dirs, now_del_dirs, next_del_dirs;
+    all_del_dirs.insert(did);
+    now_del_dirs.insert(did);
+    while (!now_del_dirs.empty())
+    {
+        for (set<int>::iterator it = now_del_dirs.begin(); it != now_del_dirs.end(); it++)
+        {
+            sprintf(p.sql, "select id from DirectoryEntity where parent_id=%d and id!=%d", *it, *it);
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询错误");
+            }
+            p.get();
+            for (size_t i = 0; i < p.result_vector.size(); i++)
+            {
+                next_del_dirs.insert(atoi(p.result_vector[i]["id"].c_str()));
+            }
+            sprintf(p.sql, "select id from FileDirectoryMap where did=%d", *it);
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询错误");
+            }
+            p.get();
+            for (size_t i = 0; i < p.result_vector.size(); i++)
+            {
+                check = remove_file(atoi(p.result_vector[i]["id"].c_str()), current_root_id, true, message);
+                if (check < 0)
+                {
+                    return make_response_json(-check, message);
+                }
+            }
+        }
+        all_del_dirs.insert(next_del_dirs.begin(), next_del_dirs.end());
+        now_del_dirs.swap(next_del_dirs);
+        set<int>().swap(next_del_dirs);
+    }
+    for (set<int>::iterator it = all_del_dirs.begin(); it != all_del_dirs.end(); it++)
+    {
+        sprintf(p.sql, "delete from DirectoryEntity where id=%d", *it);
+        if (p.execute() == -1)
+        {
+            return make_response_json(500, "数据库删除错误");
+        }
+    }
+    return make_response_json(200, "删除成功");
+}

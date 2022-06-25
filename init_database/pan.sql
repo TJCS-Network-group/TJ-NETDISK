@@ -27,7 +27,7 @@ create table FileFragmentMap(
 	`id` int primary key AUTO_INCREMENT,
     `fid` int not null,
     constraint FFM_fid foreign key(`fid`) references `FileEntity`(`id`),
-    `index` int unique not null,
+    `index` int not null,
     `fgid` int not null,
     constraint FFM_fgid foreign key(`fgid`) references `FileFragmentEntity`(`id`)
 );

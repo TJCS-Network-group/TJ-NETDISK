@@ -486,107 +486,10 @@ HttpResponse DEL_remove_file(HttpRequest &req)
         return make_response_json(-current_root_id, message);
     }
     int fdid = data["fdid"].as_int();
-    my_database p;
-    p.connect();
-    sprintf(p.sql, "select fid,did from FileDirectoryMap where id=%d", fdid);
-    if (p.execute() == -1)
-    {
-        return make_response_json(500, "数据查询出错");
-    }
-    p.get();
-    if (p.result_vector.size() == 0)
-    {
-        return make_response_json(400, "试图删除不存在的文件");
-    }
-    int fid = atoi(p.result_vector[0]["fid"].c_str());
-    int did = atoi(p.result_vector[0]["did"].c_str());
-    int check = is_child(did, current_root_id, message);
+    int check = remove_file(fdid, current_root_id, false, message);
     if (check < 0)
     {
         return make_response_json(-check, message);
-    }
-    if (!check && did != current_root_id)
-    {
-        return make_response_json(400, "不可删除他人的文件");
-    }
-    sprintf(p.sql, "delete from FileDirectoryMap where id=%d", fdid);
-    if (p.execute() == -1)
-    {
-        return make_response_json(500, "数据库删除出现错误");
-    }
-    sprintf(p.sql, "select link_num from FileEntity where id=%d", fid);
-    if (p.execute() == -1)
-    {
-        return make_response_json(500, "数据库查询出现问题");
-    }
-    p.get();
-    int link_num = atoi(p.result_vector[0]["link_num"].c_str());
-    int sub_link_num, sub_id;
-    string sub_path;
-    if (link_num == 0)
-    {
-        //?
-    }
-    else if (link_num > 1)
-    {
-        sprintf(p.sql, "update FileEntity set link_num=link_num-1 where id=%d", fid);
-        if (p.execute() == -1)
-        {
-            return make_response_json(500, "数据库更新出现问题");
-        }
-    }
-    else
-    {
-        sprintf(p.sql, "select FileFragmentEntity.id as id,FileFragmentEntity.MD5 as MD5,FileFragmentEntity.link_num as link_num\
-         from FileFragmentMap join FileFragmentEntity on FileFragmentEntity.id=FileFragmentMap.fgid\
-            where FileFragmentMap.fid=%d",
-                fid);
-        if (p.execute() == -1)
-        {
-            return make_response_json(500, "数据库查询出现问题");
-        }
-        p.get();
-        vector<map<string, string>> result = p.result_vector;
-        sprintf(p.sql, "delete from FileFragmentMap where fid=%d", fid);
-        if (p.execute() == -1)
-        {
-            return make_response_json(500, "数据库删除出现问题");
-        }
-        for (size_t i = 0; i < result.size(); i++)
-        {
-            sub_link_num = atoi(result[i]["link_num"].c_str());
-            sub_id = atoi(result[i]["id"].c_str());
-            if (sub_link_num > 1)
-            {
-                sprintf(p.sql, "update FileFragmentEntity set link_num=link_num-1 where id=%d", sub_id);
-                if (p.execute() == -1)
-                {
-                    return make_response_json(500, "数据库更新出现问题");
-                }
-            }
-            else
-            {
-                sprintf(p.sql, "delete from FileFragmentEntity where id=%d", sub_id);
-                if (p.execute() == -1)
-                {
-                    return make_response_json(500, "数据库删除出现问题");
-                }
-                sub_path = "../pool/" + result[i]["MD5"];
-                if (file_exists(sub_path))
-                {
-                    remove(sub_path.c_str());
-                }
-                else
-                {
-                    return make_response_json(500, "数据库存储了不应存在的文件碎片" + sub_path);
-                }
-            }
-        }
-        sprintf(p.sql, "delete from FileEntity where id=%d", fid);
-        if (p.execute() == -1)
-        {
-            return make_response_json(500, "数据库删除出现问题");
-        }
     }
     return make_response_json(200, "删除成功");
 }
