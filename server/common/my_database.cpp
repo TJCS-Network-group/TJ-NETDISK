@@ -288,3 +288,98 @@ int remove_file(int file_dir_id, int current_root_id, bool is_checked, string &m
     p.disconnect();
     return 0;
 }
+string get_dir_new_name(int did, int pid, int &statusCode)
+{
+
+    int num = 0;
+    my_database p;
+    p.connect();
+    if (did == pid)
+    {
+        sprintf(p.sql, "select parent_id from DirectoryEntity where id=%d", did);
+        if (p.execute() == -1)
+        {
+            statusCode = 500;
+            return "数据库查询错误";
+        }
+        p.get();
+        pid = atoi(p.result_vector[0]["parent_id"].c_str());
+    }
+    sprintf(p.sql, "select dname from DirectoryEntity where id=%d", did);
+    if (p.execute() == -1)
+    {
+        statusCode = 500;
+        return "数据库查询错误";
+    }
+    p.get();
+    string dname = p.result_vector[0]["dname"], fin_name = dname;
+    sprintf(p.sql, "select dname from DirectoryEntity where parent_id=%d and id!=%d", pid, pid);
+    if (p.execute() == -1)
+    {
+        statusCode = 500;
+        return "数据库查询出错,请联系管理员检查";
+    }
+    p.get();
+    set<string> names;
+    for (size_t i = 0; i < p.result_vector.size(); i++)
+    {
+        names.insert(p.result_vector[i]["dname"]);
+    }
+    while (true)
+    {
+
+        if (names.find(fin_name) != names.end())
+        {
+            num += 1;
+            fin_name = dname + '_' + to_string(num);
+        }
+        else
+            break;
+    }
+    statusCode = 0;
+    p.disconnect();
+    return fin_name;
+}
+string get_file_new_name(string fname, int pid, int &statusCode)
+{
+    my_database p;
+    p.connect();
+    set<string> names;
+    sprintf(p.sql, "select fname from FileDirectoryMap where did=%d", pid);
+    if (p.execute() == -1)
+    {
+        statusCode = 500;
+        return "数据库查询出错";
+    }
+    p.get();
+    for (size_t i = 0; i < p.result_vector.size(); i++)
+    {
+        names.insert(p.result_vector[i]["fname"]);
+    }
+    int num = 0;
+    string fin_name = fname;
+    size_t x = fname.find_last_of(".");
+    while (true)
+    {
+        if (names.find(fin_name) != names.end())
+        {
+            num += 1;
+            fin_name = fname;
+            if (x == string::npos)
+            {
+                fin_name += '_' + to_string(num);
+            }
+            else
+            {
+                fin_name.insert(x, "_" + to_string(num));
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+    set<string>().swap(names);
+    statusCode = 0;
+    return fin_name;
+}

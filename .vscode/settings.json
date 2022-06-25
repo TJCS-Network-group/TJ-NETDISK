@@ -2,6 +2,7 @@
     "files.associations": {
         "*.service": "cmake",
         "bitset": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "iostream": "cpp"
     }
 }

@@ -115,40 +115,11 @@ HttpResponse PUT_filesystem_rename_file(HttpRequest &req)
     {
         return make_response_json(400, "无法操作他人的文件");
     }
-    sprintf(p.sql, "select fname from FileDirectoryMap where did=%d and id!=%d",
-            did, id);
-    if (p.execute() == -1)
+    int statusCode = 0;
+    string fin_name = get_file_new_name(new_name, did, statusCode);
+    if (statusCode)
     {
-        return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
-    }
-    p.get();
-    set<string> names;
-    for (size_t i = 0; i < p.result_vector.size(); i++)
-    {
-        names.insert(p.result_vector[i]["fname"]);
-    }
-    int num = 0;
-    string fin_name = new_name;
-    size_t x = new_name.find_last_of(".");
-    while (true)
-    {
-        if (names.find(fin_name) != names.end())
-        {
-            num += 1;
-            fin_name = new_name;
-            if (x == string::npos)
-            {
-                fin_name += '_' + to_string(num);
-            }
-            else
-            {
-                fin_name.insert(x, "_" + to_string(num));
-            }
-        }
-        else
-        {
-            break;
-        }
+        return make_response_json(statusCode, fin_name);
     }
     if (fin_name == fname)
     {
@@ -161,7 +132,6 @@ HttpResponse PUT_filesystem_rename_file(HttpRequest &req)
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.disconnect();
-    set<string>().swap(names);
     message = "文件改名成功,新名为" + fin_name;
     return make_response_json(200, message);
 }
@@ -323,39 +293,11 @@ HttpResponse POST_share_move_file(HttpRequest &req)
     {
         return make_response_json(200, "文件无需移动");
     }
-    set<string> names;
-    sprintf(p.sql, "select fname from FileDirectoryMap where did=%d", pid);
-    if (p.execute() == -1)
+    int statusCode = 0;
+    string fin_name = get_file_new_name(fname, pid, statusCode);
+    if (statusCode)
     {
-        return make_response_json(500, "数据库查询出错");
-    }
-    p.get();
-    for (size_t i = 0; i < p.result_vector.size(); i++)
-    {
-        names.insert(p.result_vector[i]["fname"]);
-    }
-    int num = 0;
-    string fin_name = fname;
-    size_t x = fname.find_last_of(".");
-    while (true)
-    {
-        if (names.find(fin_name) != names.end())
-        {
-            num += 1;
-            fin_name = fname;
-            if (x == string::npos)
-            {
-                fin_name += '_' + to_string(num);
-            }
-            else
-            {
-                fin_name.insert(x, "_" + to_string(num));
-            }
-        }
-        else
-        {
-            break;
-        }
+        return make_response_json(statusCode, fin_name);
     }
     sprintf(p.sql, "update FileDirectoryMap set did=%d,fname=\"%s\" where id=%d", pid, fin_name.c_str(), fdid);
     if (p.execute() == -1)
@@ -418,39 +360,11 @@ HttpResponse POST_share_copy_file(HttpRequest &req)
     {
         return make_response_json(400, "不可移动到他人的文件夹");
     }
-    set<string> names;
-    sprintf(p.sql, "select fname from FileDirectoryMap where did=%d", pid);
-    if (p.execute() == -1)
+    int statusCode = 0;
+    string fin_name = get_file_new_name(fname, pid, statusCode);
+    if (statusCode)
     {
-        return make_response_json(500, "数据库查询出错");
-    }
-    p.get();
-    for (size_t i = 0; i < p.result_vector.size(); i++)
-    {
-        names.insert(p.result_vector[i]["fname"]);
-    }
-    int num = 0;
-    string fin_name = fname;
-    size_t x = fname.find_last_of(".");
-    while (true)
-    {
-        if (names.find(fin_name) != names.end())
-        {
-            num += 1;
-            fin_name = fname;
-            if (x == string::npos)
-            {
-                fin_name += '_' + to_string(num);
-            }
-            else
-            {
-                fin_name.insert(x, "_" + to_string(num));
-            }
-        }
-        else
-        {
-            break;
-        }
+        return make_response_json(statusCode, fin_name);
     }
     sprintf(p.sql, "insert into FileDirectoryMap(fid,did,fname) value (%d,%d,\"%s\");", fid, pid, fin_name.c_str());
     if (p.execute() == -1)

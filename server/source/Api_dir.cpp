@@ -1,6 +1,7 @@
 #include "../include/HttpServer.h"
 #include "../include/HttpTool.h"
 #include "../include/my_database.h"
+#include <stack>
 using namespace std;
 HttpResponse GET_filesystem_get_dir(HttpRequest &req)
 {
@@ -126,13 +127,13 @@ HttpResponse PUT_filesystem_rename_dir(HttpRequest &req)
     }
     int parent_id = atoi(p.result_vector[0]["parent_id"].c_str());
     string dname = p.result_vector[0]["dname"];
-    int check = is_child(current_root_id, parent_id, message);
+    int check = is_child(parent_id, current_root_id, message);
     if (check < 0)
     {
         return make_response_json(-check, message);
     }
 
-    if (!check)
+    if (!check && current_root_id != parent_id)
     {
         return make_response_json(400, "无法操作他人的文件夹");
     }
@@ -168,13 +169,16 @@ HttpResponse PUT_filesystem_rename_dir(HttpRequest &req)
     {
         return make_response_json(200, "新文件夹名和原文件名相同或和其他文件夹存在冲突,修改被取消");
     }
+    if (dname == fin_name)
+    {
+        return make_response_json(200, "新文件夹名和原文件名相同或和其他文件夹存在冲突,修改被取消");
+    }
     sprintf(p.sql, "update DirectoryEntity set dname=\"%s\" where id=%d", fin_name.c_str(), did);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.disconnect();
-    set<string>().swap(names);
     message = "新文件夹名为" + fin_name;
     return make_response_json(200, message);
 }
@@ -309,29 +313,11 @@ HttpResponse POST_share_move_dir(HttpRequest &req)
     {
         return make_response_json(200, "文件夹无需移动");
     }
-    string dname = p.result_vector[0]["dname"];
-    sprintf(p.sql, "select dname from DirectoryEntity where parent_id=%d and id!=%d", pid, pid);
-    if (p.execute() == -1)
+    int statusCode = 0;
+    string fin_name = get_dir_new_name(did, pid, statusCode);
+    if (statusCode > 0)
     {
-        return make_response_json(500, "数据库查询出错,请联系管理员检查");
-    }
-    p.get();
-    set<string> names;
-    for (size_t i = 0; i < p.result_vector.size(); i++)
-    {
-        names.insert(p.result_vector[i]["dname"]);
-    }
-    int num = 0;
-    string fin_name = dname;
-    while (true)
-    {
-        if (names.find(fin_name) != names.end())
-        {
-            num += 1;
-            fin_name = dname + '_' + to_string(num);
-        }
-        else
-            break;
+        return make_response_json(statusCode, fin_name);
     }
     sprintf(p.sql, "update DirectoryEntity set parent_id=%d,dname=\"%s\" where id=%d", pid, fin_name.c_str(), did);
     if (p.execute() == -1)
@@ -396,7 +382,88 @@ HttpResponse POST_share_copy_dir(HttpRequest &req)
     {
         return make_response_json(400, "不可将文件夹复制到其子文件夹下");
     }
-
+    int now, statusCode, fid;
+    vector<int> floor, next;
+    stack<int> dir_now, new_insert;
+    stack<vector<int>> dir_tree;
+    string fin_name;
+    floor.push_back(did);
+    new_insert.push(pid);
+    dir_tree.push(floor);
+    dir_now.push(0);
+    vector<int>().swap(floor);
+    my_database p;
+    p.connect();
+    while (!dir_now.empty())
+    {
+        now = dir_now.top();
+        floor = dir_tree.top();
+        if (now == floor.size())
+        {
+            dir_now.pop();
+            dir_tree.pop();
+            new_insert.pop();
+        }
+        else
+        {
+            dir_now.pop();
+            dir_now.push(now + 1);
+            fin_name = get_dir_new_name(floor[now], new_insert.top(), statusCode);
+            if (statusCode > 0)
+            {
+                return make_response_json(statusCode, fin_name);
+            }
+            sprintf(p.sql, "insert into DirectoryEntity(dname,parent_id) value (\"%s\",%d)",
+                    fin_name.c_str(), new_insert.top());
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库插入错误");
+            }
+            sprintf(p.sql, "select LAST_INSERT_ID() as id");
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询错误");
+            }
+            p.get();
+            new_insert.push(atoi(p.result_vector[0]["id"].c_str()));
+            sprintf(p.sql, "select id from DirectoryEntity where parent_id=%d and id!=%d", floor[now], floor[now]);
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询错误");
+            }
+            p.get();
+            for (size_t i = 0; i < p.result_vector.size(); i++)
+            {
+                next.push_back(atoi(p.result_vector[i]["id"].c_str()));
+            }
+            dir_tree.push(next);
+            vector<int>().swap(next);
+            dir_now.push(0);
+            sprintf(p.sql, "select fid,fname from FileDirectoryMap where did=%d", floor[now]);
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询错误");
+            }
+            p.get();
+            for (size_t i = 0; i < p.result_vector.size(); i++)
+            {
+                fid = atoi(p.result_vector[i]["fid"].c_str());
+                fin_name = p.result_vector[i]["fname"];
+                sprintf(p.sql, "insert into FileDirectoryMap(fid,did,fname) value (%d,%d,\"%s\");",
+                        fid, new_insert.top(), fin_name.c_str());
+                if (p.execute() == -1)
+                {
+                    return make_response_json(500, "数据库新增失败,请联系管理员");
+                }
+                //应该开启事务？或者是数据库写触发器？
+                sprintf(p.sql, "update FileEntity set link_num=link_num+1 where id=%d", fid);
+                if (p.execute() == -1)
+                {
+                    return make_response_json(500, "数据库修改失败,请联系管理员");
+                }
+            }
+        }
+    }
     return make_response_json(200, "复制完成");
 }
 
