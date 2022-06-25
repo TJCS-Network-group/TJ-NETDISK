@@ -163,3 +163,27 @@ HttpResponse GET_logout(HttpRequest &req)
     resp.setHeader("Set-Cookie: sessionid=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; Path=/");
     return resp;
 }
+HttpResponse GET_myinfo(HttpRequest &req)
+{
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(400, "当前用户未登录");
+    }
+    my_database p;
+    p.connect();
+    sprintf(p.sql, "select user_name from UserEntity where id=%d", req.current_user_id);
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库查询出现异常");
+    }
+    p.get();
+    if (p.result_vector.size() == 0)
+    {
+        return make_response_json(400, "登录了不存在的用户");
+    }
+    return make_response_json(200, "当前用户信息为", "{\"user_name\":\"" + p.result_vector[0]["user_name"] + "\"}");
+}
+HttpResponse GET_get_identity(HttpRequest &req)
+{
+    return make_response_json(200, "当前用户登录情况为", "{\"login\":" + bool_to_string(req.current_user_id != 0) + '}');
+}
