@@ -65,8 +65,8 @@ HttpResponse POST_upload_fragment(HttpRequest &req)
         file_exist = true;
     if (file_exist) //传了文件过来
     {
-        cout << "传进来的碎片的文件名： " << file_name << endl; //可以跟client端约定
-        // cout << "文件内容： " << file_fragment << endl;
+        // cout << "传进来的碎片的文件名： " << file_name << endl; //可以跟client端约定
+        //  cout << "文件内容： " << file_fragment << endl;
         string savePath = "../pool/" + fragment_md5;
         if (file_exists(savePath) == false && file_fragment_in_database)
             return make_response_json(500, "文件碎片池与数据库不一致！碎片池有该md5码而数据库没有");
@@ -92,7 +92,7 @@ HttpResponse POST_upload_fragment(HttpRequest &req)
                             return make_response_json(500, "碎块md5码错误，错误碎块删除失败");
                         return make_response_json(400, "传入碎块md5码与服务端根据碎块内容计算出的结果不一致，错误碎块未存储，数据库未更新");
                     }
-                    else //添加碎块完全正确，去数据库里找对应文件和碎块就行
+                    else //添加碎块完全正确，数据库里插入碎块实体
                     {
                         sprintf(create_link.sql, "insert into FileFragmentEntity(MD5,fgsize,link_num) value(\"%s\",%d,%d)",
                                 md5_correct.c_str(), file_fragment.size(), 0); // 0，后面统一执行++
