@@ -172,10 +172,10 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         }
         sprintf(p.sql, "insert into FileEntity(MD5,fsize,link_num,next_index,is_complete)\
          value (\"%s\",%d,%d,%d,%d)",
-                md5.c_str(), fsize, 0, 0, 0); // link设置为1，上传完成后才设置为0
+                md5.c_str(), fsize, 0, 1, 0); // link设置为1，上传完成后才设置为0
         if (p.execute() == -1)
         {
-            return make_response_json(500, "数据库查询新建,请联系管理员解决问题");
+            return make_response_json(500, "数据库新建错误,请联系管理员解决问题");
         }
         data += "{\"next_index\":0}";
         return make_response_json(200, "需要的下一块为", data);
@@ -211,6 +211,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
             p.get();
             for (size_t i = 0; i < p.result_vector.size(); i++)
             {
+                cout << "has index:" << atoi(p.result_vector[i]["index"].c_str()) << endl;
                 indexs.erase(atoi(p.result_vector[i]["index"].c_str()));
             }
 
@@ -222,11 +223,20 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
                     break;
                 }
             }
-            if (next_index == -1)
+            if (next_index == -1 && indexs.size() > 0)
             {
                 next_index = *indexs.begin();
             }
-            sprintf(p.sql, "update FileEntity set next_index=%d where md5=\"%s\"", next_index, md5.c_str());
+            cout << "next_index:" << next_index << endl;
+            if (next_index != -1)
+            {
+                sprintf(p.sql, "update FileEntity set next_index=%d where md5=\"%s\"", next_index, md5.c_str());
+            }
+            else
+            {
+                sprintf(p.sql, "update FileEntity set next_index=%d,is_complete=1 where md5=\"%s\"", next_index, md5.c_str());
+            }
+            cout << p.sql << endl;
             if (p.execute() == -1)
             {
                 return make_response_json(500, "数据库更新出错,请联系系统管理员");

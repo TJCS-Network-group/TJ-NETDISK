@@ -51,7 +51,7 @@ db_cursor.execute(sql)
 db.commit()
 
 if os.path.exists(pool_path):
-    os.remove(pool_path)
+    os.system("rm -rf "+pool_path)
 os.mkdir(pool_path)
 
 users = ["test", "test1", "test2"]
