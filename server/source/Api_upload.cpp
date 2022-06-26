@@ -69,9 +69,9 @@ HttpResponse POST_upload_fragment(HttpRequest &req)
         //  cout << "文件内容： " << file_fragment << endl;
         string savePath = "../pool/" + fragment_md5;
         if (file_exists(savePath) == false && file_fragment_in_database)
-            return make_response_json(500, "文件碎片池与数据库不一致！碎片池有该md5码而数据库没有");
-        else if (file_exists(savePath) && file_fragment_in_database == false)
             return make_response_json(500, "文件碎片池与数据库不一致！碎片池无该md5码而数据库有");
+        else if (file_exists(savePath) && file_fragment_in_database == false)
+            return make_response_json(500, "文件碎片池与数据库不一致！碎片池有该md5码而数据库没有");
         else if (file_exists(savePath) == false && file_fragment_in_database == false) //看看pool和数据库中文件不存在
         {
             fstream myf_body(savePath, ios::out | ios::binary); //相对Main来说是上一级目录（要开机自启动可能要改成绝对路径）

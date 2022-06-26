@@ -202,7 +202,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
                 indexs.insert(i);
             }
             sprintf(p.sql, "select `index` from FileFragmentMap \
-            join FileEntity on FileEntity.id=FileFragmentMap.fid where FileEntity.md5=\"%s\" and `index` > %d",
+            join FileEntity on FileEntity.id=FileFragmentMap.fid where FileEntity.md5=\"%s\"",
                     md5.c_str());
             if (p.execute() == -1)
             {
