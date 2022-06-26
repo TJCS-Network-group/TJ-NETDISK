@@ -3,6 +3,7 @@ from copy import deepcopy
 import os
 import hashlib
 import pymysql as pm
+pool_path='../pool'
 db = pm.connect(host='localhost',
                 user='root',
                 password='root123',
@@ -49,8 +50,12 @@ sql = "insert into DirectoryEntity(dname,parent_id) value {};".format(
 db_cursor.execute(sql)
 db.commit()
 
-users = ["³ÌÉ­", "test", "³Â¹ÚÖÒ"]
-passwds = ["1234567", "test", "1919810"]
+if os.path.exists(pool_path):
+    os.remove(pool_path)
+os.mkdir(pool_path)
+
+users = ["test", "test1", "test2"]
+passwds = ["test", "test1", "test2"]
 for j in range(1, 4):
     sql = "insert into UserEntity(user_name,password_hash,root_dir_id) value {};".format(
         (users[j - 1], hashlib.md5(passwds[j - 1].encode("gbk")).hexdigest(),
@@ -81,7 +86,7 @@ with open("test.pdf", "rb") as f:
         print(sql)
         db_cursor.execute(sql)
         db.commit()
-        with open("../pool/{}".format(fg_md5), "wb") as fp:
+        with open(pool_path+"/{}".format(fg_md5), "wb") as fp:
             fp.write(tmp)
         num += 1
     sql = "insert into FileDirectoryMap(fid,did,fname) value {}".\
