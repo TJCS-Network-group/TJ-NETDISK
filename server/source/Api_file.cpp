@@ -29,7 +29,10 @@ HttpResponse GET_file_exist(HttpRequest &req)
     }
     else if (p.result_vector.size() == 1)
     {
-        result += "true";
+        if (atoi(p.result_vector[0]["is_complete"].c_str()) == 1)
+            result += "true";
+        else
+            result += "false";
     }
     else
     {

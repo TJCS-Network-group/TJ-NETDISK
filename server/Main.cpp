@@ -195,8 +195,8 @@ int main()
                 if (new_request.disconnect == true) // recv出来len=0, 对方断开
                 {
                     //我们的所有cookie都只限于本次回话，disconnect之后要从session中删掉
-                    if (session.count(new_request.current_user_id) != 0)
-                        session.erase(new_request.current_user_id);
+                    // if (session.count(new_request.current_user_id) != 0)
+                    //    session.erase(new_request.current_user_id);
                     struct sockaddr_in clientAddr;
                     socklen_t clientAddrLen = sizeof(clientAddr);
                     char clientIP[INET_ADDRSTRLEN] = "";

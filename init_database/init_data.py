@@ -49,8 +49,8 @@ sql = "insert into DirectoryEntity(dname,parent_id) value {};".format(
 db_cursor.execute(sql)
 db.commit()
 
-users = ["程森", "高曾谊", "陈冠忠"]
-passwds = ["1234567", "7654321", "1919810"]
+users = ["程森", "test", "陈冠忠"]
+passwds = ["1234567", "test", "1919810"]
 for j in range(1, 4):
     sql = "insert into UserEntity(user_name,password_hash,root_dir_id) value {};".format(
         (users[j - 1], hashlib.md5(passwds[j - 1].encode("gbk")).hexdigest(),
@@ -60,12 +60,12 @@ for j in range(1, 4):
 
 with open("test.pdf", "rb") as f:
     f_md5 = hashlib.md5(f.read()).hexdigest()
-    fsize = f.tell()
+    fsize = f.tell()#当前文件指针位置
     sql = "insert into FileEntity(MD5,fsize,link_num,next_index,is_complete) value {}".\
         format((f_md5,fsize,2,-1,True))
     db_cursor.execute(sql)
     db.commit()
-    f.seek(0, 0)
+    f.seek(0, 0)#回开头
     num = 1
     while fsize > f.tell():
         fgsize = min(fsize - f.tell(), 4 * 1024 * 1024)

@@ -100,6 +100,7 @@ int utf82gbk(char *gbkStr, const char *srcStr, int maxGbkStrlen)
     }
     wcstombs(gbkStr, unicodeStr, gbkLen);
     gbkStr[gbkLen] = 0; //Ìí¼Ó½áÊø·û
+
     free(unicodeStr);
     return gbkLen;
 }

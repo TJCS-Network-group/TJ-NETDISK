@@ -13,7 +13,7 @@ std::map<int, std::string> session; // user_id : cookie的md5部分
 
 void HttpRequest::Parse_request_header(const string _raw_http_request)
 {
-    // cout << _raw_http_request << endl;
+    cout << _raw_http_request << endl;
     if (_raw_http_request.length() == 0)
     {
         disconnect = true;
@@ -124,12 +124,12 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     for (auto i : headers)
     {
         cout << i.first << ":" << i.second << endl;
-    }
+    }*/
     cout << "SESSION: " << endl;
     for (auto i : session)
     {
         cout << i.first << ": " << i.second << endl;
-    }*/
+    }
     if (headers.count("Cookie") != 0)
     { //有cookie
         string cookie = headers["Cookie"];
@@ -147,12 +147,13 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
                 current_user_str.push_back(cookie[cur]);
                 ++cur;
             }
-            string md5 = cookie.substr(cur + 1);
+            string md5 = cookie.substr(cur + 1, 32); //我们用MD5码 默认为32字节长度
+            cout << md5 << endl;
             current_user_id = atoi(current_user_str.c_str()); // current_user_id为0代表没登录
 
             if (session.count(current_user_id) == 0 || md5 != session[current_user_id])
             { //与session中的表项对比
-                // cout << "cookie错误！" << endl;
+                cout << "cookie错误！" << endl;
                 current_user_id = 0;
             }
         }
