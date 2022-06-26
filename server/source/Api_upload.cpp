@@ -177,7 +177,7 @@ HttpResponse POST_upload_file(HttpRequest &req)
     {
         file_md5 = req.json["md5"].as_string();
         parent_dir_id = req.json["parent_dir_id"].as_int();
-        file_name = req.json["file_name"].as_string();
+        file_name = req.json["filename"].as_string();
     }
     catch (exception e)
     {
@@ -196,7 +196,6 @@ HttpResponse POST_upload_file(HttpRequest &req)
     if (add_map.result_vector.size() == 0)
         return make_response_json(500, "数据库表项中不存在该文件！请检查upload_allocate接口");
     int file_id = atoi(add_map.result_vector[0]["id"].c_str());
-    cout << "is_complete: " << atoi(add_map.result_vector[0]["is_complete"].c_str());
     bool is_complete = atoi(add_map.result_vector[0]["is_complete"].c_str());
 
     //检查目录
@@ -228,9 +227,15 @@ HttpResponse POST_upload_file(HttpRequest &req)
     if (check_file_name_legal(file_name) == false)
         return make_response_json(400, "文件名有误");
 
+    int statusCode;
+    string fin_name = get_file_new_name(file_name, parent_dir_id, statusCode);
+    if (statusCode > 0)
+    {
+        return make_response_json(statusCode, fin_name);
+    }
     if (is_complete)
     {
-        sprintf(add_map.sql, "insert into `FileDirectoryMap`(`fid`,`did`,`fname`) value(%d,%d,%s)", file_id, parent_dir_id, file_name.c_str());
+        sprintf(add_map.sql, "insert into `FileDirectoryMap`(`fid`,`did`,`fname`) value(%d,%d,\"%s\")", file_id, parent_dir_id, fin_name.c_str()); //创建新的副本
         if (add_map.execute() == -1)
             return make_response_json(500, "数据库插入出错,请联系管理员解决问题");
         sprintf(add_map.sql, "update `FileEntity` set link_num=link_num+1 where id=%d", file_id);
