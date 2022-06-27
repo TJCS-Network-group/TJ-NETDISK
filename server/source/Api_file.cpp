@@ -193,7 +193,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         if (atoi(p.result_vector[0]["is_complete"].c_str()) == 0)
         {
             // check()
-            data += "{\"next_index\":" + p.result_vector[0]["next_index"] + '}';
+            // data += "{\"next_index\":" + p.result_vector[0]["next_index"] + '}';
             int max_index = atoi(p.result_vector[0]["fsize"].c_str()) / FRAGMENT_SIZE + 1;
             int now_index = atoi(p.result_vector[0]["next_index"].c_str());
             int next_index = -1;
@@ -215,7 +215,24 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
                 cout << "has index:" << atoi(p.result_vector[i]["index"].c_str()) << endl;
                 indexs.erase(atoi(p.result_vector[i]["index"].c_str()));
             }
-
+            if (indexs.find(now_index) == indexs.end())
+            {
+                for (auto it = indexs.begin(); it != indexs.end(); it++)
+                {
+                    if (*it > now_index)
+                    {
+                        next_index = *it;
+                        break;
+                    }
+                }
+                if (next_index == -1 && indexs.size() > 0)
+                {
+                    next_index = *indexs.begin();
+                }
+                now_index = next_index;
+                next_index = -1;
+            }
+            data += "{\"next_index\":" + now_index + '}';
             for (auto it = indexs.begin(); it != indexs.end(); it++)
             {
                 if (*it > now_index)
