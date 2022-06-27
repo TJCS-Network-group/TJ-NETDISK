@@ -141,7 +141,7 @@ HttpResponse PUT_filesystem_rename_dir(HttpRequest &req)
     {
         return make_response_json(401, "用户无权修改根目录名");
     }
-    sprintf(p.sql, "select dname from DirectoryEntity where parent_id=%d and id!=%d and id!=%d",
+    sprintf(p.sql, "select dname,laster_change_name from DirectoryEntity where parent_id=%d and id!=%d and id!=%d",
             parent_id, parent_id, did);
     if (p.execute() == -1)
     {
@@ -179,7 +179,7 @@ HttpResponse PUT_filesystem_rename_dir(HttpRequest &req)
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.disconnect();
-    message = "新文件夹名为" + fin_name;
+    message = "文件夹" + dname + "已被改为" + fin_name;
     return make_response_json(200, message);
 }
 
