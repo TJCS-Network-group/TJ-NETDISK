@@ -45,6 +45,9 @@ HttpResponse make_response_json(int _statusCode, string _message, string _data, 
 ";
 
     HttpResponse resp;
+    resp.setHeader("Access-Control-Allow-Origin: *");
+    resp.setHeader("Access-Control-Allow-Headers: X-Requested-With,Content-Type");
+    resp.setHeader("Access-Control-Allow-Methods: PUT,POST,GET,DELETE,OPTIONS");
     resp.setHeader("Content-Type: application/json;charset=GBK"); // json&gbk
     resp.setBody(send_json);
     resp.setHeader("Content-Length: " + to_string(send_json.length())); //³¤¶È

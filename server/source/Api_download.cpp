@@ -47,6 +47,9 @@ HttpResponse GET_download_fragment(HttpRequest &req)
     HttpResponse resp;
     resp.setHeader("Content-Type: application/octet-stream");            //直接传输二进制
     resp.setHeader("Content-Length: " + to_string(file_value.length())); //长度
+    resp.setHeader("Access-Control-Allow-Origin: *");
+    resp.setHeader("Access-Control-Allow-Headers: X-Requested-With,Content-Type");
+    resp.setHeader("Access-Control-Allow-Methods: PUT,POST,GET,DELETE,OPTIONS");
     resp.setBody(file_value);
     return resp;
 }
