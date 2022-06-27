@@ -34,7 +34,7 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
         d["type"] = "0";
         data.push_back(d);
     }
-    sprintf(p.sql, "select id,dname,last_change_time as name from DirectoryEntity where parent_id=%d and id!=%d", dir_id, dir_id);
+    sprintf(p.sql, "select id,dname as name,last_change_time from DirectoryEntity where parent_id=%d and id!=%d", dir_id, dir_id);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
