@@ -170,9 +170,10 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         {
             return make_response_json(400, "不存在负数大小的文件");
         }
+        int next_index = fsize > FRAGMENT_SIZE;
         sprintf(p.sql, "insert into FileEntity(MD5,fsize,link_num,next_index,is_complete)\
          value (\"%s\",%d,%d,%d,%d)",
-                md5.c_str(), fsize, 0, 1, 0); // link设置为1，上传完成后才设置为0
+                md5.c_str(), fsize, 0, next_index, 0); // link设置为1，上传完成后才设置为0
         if (p.execute() == -1)
         {
             return make_response_json(500, "数据库新建错误,请联系管理员解决问题");
