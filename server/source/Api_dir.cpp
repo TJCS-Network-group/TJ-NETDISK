@@ -570,6 +570,7 @@ HttpResponse GET_share_get_dir_tree(HttpRequest &req)
     string data = "";
     my_database p;
     p.connect();
+    data += "[";
     while (!dir_now.empty())
     {
         now = dir_now.top();
@@ -607,6 +608,7 @@ HttpResponse GET_share_get_dir_tree(HttpRequest &req)
             dir_now.push(0);
         }
     }
+    data += "]";
     cout << data << endl;
     return make_response_json(200, "树形目录如下", data);
 }
