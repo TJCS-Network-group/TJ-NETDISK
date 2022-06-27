@@ -8,11 +8,11 @@ using namespace std;
 
 HttpResponse GET_download_fragment(HttpRequest &req)
 {
-    int file_id;
+    int fdid;
     int index;
     try
     {
-        file_id = atoi(req.params["file_id"].c_str());
+        fdid = atoi(req.params["fdid"].c_str());
         index = atoi(req.params["index"].c_str());
     }
     catch (exception e)
@@ -23,8 +23,8 @@ HttpResponse GET_download_fragment(HttpRequest &req)
     p.connect();
     sprintf(p.sql, "select FileFragmentEntity.MD5 as MD5 from FileFragmentMap \
     join FileFragmentEntity on FileFragmentEntity.id=FileFragmentMap.fgid \
-    where FileFragmentMap.fid=%d and FileFragmentMap.`index`=%d",
-            file_id, index);
+    where FileFragmentMap.id=%d and FileFragmentMap.`index`=%d",
+            fdid, index);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错");
