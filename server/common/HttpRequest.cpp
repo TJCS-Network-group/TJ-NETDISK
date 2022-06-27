@@ -1,11 +1,16 @@
 //解析client端传入的HTTP请求
 #include "../include/HttpRequest.h"
 #include "../include/HttpTool.h"
+#include <cerrno>
 #include <cstring>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <sys/socket.h>
 using namespace std;
+
+const int TIME_OUT = 5; // 5s的TIME_OUT时间
+
 // 解析请求报文
 // resouce以'/'开头
 // Method暂时只用这四种：GET POST PUT DELETE
@@ -15,6 +20,9 @@ std::map<int, std::string> session; // user_id : cookie的md5部分
 
 void HttpRequest::Parse_request_header(const string _raw_http_request)
 {
+    bool flag = true;
+    time_t past_time;
+    time(&past_time);
     // cout << _raw_http_request << endl;
     if (_raw_http_request.length() == 0)
     {
@@ -25,8 +33,17 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
         disconnect = false;
     int lastcur = 0, cur = 0, cnt = 0;
     //解析第一行
-    while (true)
+    while (flag)
     {
+        time_t cur_time;
+        time(&cur_time);
+        if (cur_time - past_time >= TIME_OUT)
+        {
+            disconnect = true;
+            flag = false;
+            return;
+        }
+
         if (_raw_http_request[cur] == ' ')
         {
             if (cnt == 0)
@@ -73,8 +90,17 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     bool find_key = true;
     string key, value;
 
-    while (true)
+    while (flag)
     {
+        time_t cur_time;
+        time(&cur_time);
+        if (cur_time - past_time >= TIME_OUT)
+        {
+            // disconnect = true;
+            flag = false;
+            // return;//没有header也不是不行
+        }
+
         if (_raw_http_request[cur] == ':')
         {
             find_key = false; //开始找value
@@ -176,6 +202,9 @@ int find_name_form_data(string &content, string &find_name, string &result)
 }
 void HttpRequest::Parse_request_body()
 {
+    bool flag = true;
+    time_t past_time;
+    time(&past_time);
     if (headers.count("Content-Type") != 0)
     {
         string type = headers["Content-Type"];
@@ -202,8 +231,17 @@ void HttpRequest::Parse_request_body()
                     // cout << boundary << endl;
                     size_t next_pos = 0;
                     string key, value, filename;
-                    while (true)
+                    while (flag)
                     {
+                        time_t cur_time;
+                        time(&cur_time);
+                        if (cur_time - past_time >= TIME_OUT)
+                        {
+                            disconnect = true;
+                            flag = false;
+                            return; //没有body也不是不行
+                        }
+
                         pos = body.find(boundary, next_pos); //一般来说一定能找到
                         if (pos == body.npos)
                             break;
@@ -281,30 +319,42 @@ HttpRequest http_recv_request(int sockfd)
 { //传入accept的socketfd
     memset(buf, 0, BUFFER_SIZE);
     int len = recv(sockfd, buf, BUFFER_SIZE, 0); //第一次接受数据，把所有header找到
-    // buf[len] = '\0';
-    cout << "len: " << len << endl;
 
     string client_http_request(buf, len);
+    // cout << client_http_request << endl;
     //创建一个HttpRequest对象解析第一次发过来的原报文（包含完整header, 但可能不包含完整body）
     HttpRequest new_request(client_http_request);
-
+    time_t past_time;
+    time(&past_time);
     while (new_request.Read_body_over() == false) //收到Content-Length没达到body值
     {
+
+        time_t cur_time;
+        time(&cur_time);
+        if (cur_time - past_time >= TIME_OUT)
+        {
+            new_request.disconnect = true;
+            return new_request; //直接不等之后的body了
+        }
+
         memset(buf, 0, BUFFER_SIZE);
         int len = recv(sockfd, buf, BUFFER_SIZE, 0); //接受数据
-        cout << "len: " << len << endl;
-        if (len == -1)
+        if (len < 0 && errno != EAGAIN)
         {
-            cerr << "Error: recv\n";
+            cout << errno << endl
+                 << strerror(errno) << endl;
             exit(EXIT_FAILURE);
         }
         else if (len == 0) // disconnect
         {
             break;
         }
-        //把buf数据copy到body中
-        string tep_str(buf, len);
-        new_request.Concat_body(tep_str);
+        else if (len > 0)
+        {
+            //把buf数据copy到body中
+            string tep_str(buf, len);
+            new_request.Concat_body(tep_str);
+        }
     }
     if (len != 0)
     {

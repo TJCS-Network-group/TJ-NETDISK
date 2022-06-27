@@ -3,6 +3,7 @@
 #include "./include/HttpServer.h"
 #include <arpa/inet.h>
 #include <cerrno>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -124,8 +125,8 @@ int main()
                 inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, INET_ADDRSTRLEN);
                 cout << "connect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
 
-                // if (setnonblocking(conn) == -1)
-                //     continue; //设为非阻塞
+                if (setnonblocking(conn) == -1)
+                    continue; //设为非阻塞
 
                 ev.events = EPOLLIN | EPOLLET;
                 ev.data.fd = conn;
