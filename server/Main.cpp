@@ -3,6 +3,7 @@
 #include "./include/HttpServer.h"
 #include <arpa/inet.h>
 #include <cerrno>
+#include <cstring>
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -39,7 +40,13 @@ int setnonblocking(int sock)
     }
     return 0;
 }
-
+struct Myepoll_data
+{
+    char *data;
+    // bool is_malloc;//不需要，初始令data为NULL就行，free(NULL)无事发生
+    int length;
+    int sockfd;
+};
 int main()
 {
     Routers routers;        //路由表
@@ -148,14 +155,17 @@ int main()
                     //我们的所有cookie都只限于本次回话，disconnect之后要从session中删掉
                     // if (session.count(new_request.current_user_id) != 0)
                     //    session.erase(new_request.current_user_id);
+
                     struct sockaddr_in clientAddr;
                     socklen_t clientAddrLen = sizeof(clientAddr);
                     char clientIP[INET_ADDRSTRLEN] = "";
                     getpeername(sockfd, (struct sockaddr *)&clientAddr, &clientAddrLen);
                     inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, INET_ADDRSTRLEN);
                     cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
-                    close(sockfd); //断开
-                    sockfd = -1;
+
+                    // close(sockfd); //断开
+                    // sockfd = -1;
+                    epoll_ctl(epollfd, EPOLL_CTL_DEL, sockfd, &events[i]);
                 }
                 else
                 {
@@ -173,9 +183,73 @@ int main()
                     myf.close();
                     HttpResponse new_response = routers.getResponse(new_request);
 
-                    string send_content = new_response.getMessage(); //要发给client端的报文，不一定要返回string了
-                    send(sockfd, send_content.c_str(), send_content.length(), 0);
+                    string send_content = new_response.getMessage();
+
+                    // send(sockfd, send_content.c_str(), send_content.length(), 0);
+                    int len_sum = 0;
+                    const int TIME_OUT = 5; // 5s
+                    time_t past_time;
+                    time(&past_time);
+                    /*while (len_sum < send_content.length())
+                    {
+                        time_t cur_time;
+                        time(&cur_time);
+                        if (cur_time - past_time >= TIME_OUT)
+                        {
+                            break;
+                        }
+
+                        int len = send(sockfd, send_content.c_str() + len_sum, send_content.length() - len_sum, 0);
+                        if (len > 0)
+                            len_sum += len;
+                        else if (errno != EAGAIN)
+                        {
+                            cout << errno << ' ' << strerror(errno) << endl;
+                            break;
+                        }
+                    }*/
+                    cout << "EPOLLIN" << endl;
+
+                    Myepoll_data *tep = (Myepoll_data *)malloc(sizeof(Myepoll_data));
+                    tep->length = send_content.length();
+                    tep->data = (char *)malloc(send_content.length() + 1);
+                    memcpy(tep->data, send_content.c_str(), send_content.length());
+                    tep->data[tep->length] = '\0';
+                    tep->sockfd = sockfd;
+
+                    ev.data.ptr = (void *)tep;
+
+                    // ev.data.fd = sockfd;
+                    ev.events = EPOLLOUT | EPOLLET; // OUT
+                    epoll_ctl(epollfd, EPOLL_CTL_MOD, sockfd, &ev);
                 }
+            }
+            else if (events[i].events & EPOLLOUT)
+            {
+                cout << "EPOLLOUT" << endl;
+                Myepoll_data *md = (Myepoll_data *)events[i].data.ptr;
+
+                int len_sum = 0;
+                // cout << "len: " << md->length << endl;
+                while (len_sum < md->length)
+                {
+                    int len = send(md->sockfd, md->data + len_sum, md->length - len_sum, 0);
+                    if (len > 0)
+                    {
+                        len_sum += len;
+                        // cout << "len_sum: " << len_sum << endl;
+                    }
+                    else if (errno != EAGAIN)
+                    {
+                        cout << errno << ' ' << strerror(errno) << endl;
+                    }
+                }
+                free(md->data);
+                free(md);
+
+                ev.data.fd = md->sockfd;
+                ev.events = EPOLLIN | EPOLLET;
+                epoll_ctl(epollfd, EPOLL_CTL_MOD, md->sockfd, &ev);
             }
         }
     }

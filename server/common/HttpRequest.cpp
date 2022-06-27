@@ -143,7 +143,7 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     }
     origin_headers = _raw_http_request.substr(0, cur - 2);
     body = _raw_http_request.substr(cur);
-
+    /*
     cout << "ROUTE:" << endl;
     cout << route << endl;
 
@@ -158,6 +158,7 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     {
         cout << i.first << ":" << i.second << endl;
     }
+    */
 
     // cout << "SESSION: " << endl;
     // for (auto i : session)
