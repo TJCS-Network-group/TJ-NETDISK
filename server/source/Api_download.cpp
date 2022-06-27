@@ -21,9 +21,10 @@ HttpResponse GET_download_fragment(HttpRequest &req)
     }
     my_database p;
     p.connect();
-    sprintf(p.sql, "select FileFragmentEntity.MD5 as MD5 from FileFragmentMap \
+    sprintf(p.sql, "select FileFragmentEntity.MD5 as MD5 from FileFragmentMap\
     join FileFragmentEntity on FileFragmentEntity.id=FileFragmentMap.fgid \
-    where FileFragmentMap.id=%d and FileFragmentMap.`index`=%d",
+    join FileEntity on FileDirectoryMap.fid=FileEntity.id \
+    where FileDirectoryMap.id=%d and FileFragmentMap.`index`=%d",
             fdid, index);
     if (p.execute() == -1)
     {
