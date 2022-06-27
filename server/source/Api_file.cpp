@@ -232,7 +232,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
                 now_index = next_index;
                 next_index = -1;
             }
-            data += "{\"next_index\":" + now_index + '}';
+            data += "{\"next_index\":" + to_string(now_index) + '}';
             for (auto it = indexs.begin(); it != indexs.end(); it++)
             {
                 if (*it > now_index)
