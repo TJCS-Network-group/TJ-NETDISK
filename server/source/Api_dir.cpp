@@ -17,7 +17,7 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
     dir_id = atoi(req.params["dir_id"].c_str());
     my_database p;
     p.connect();
-    sprintf(p.sql, "select FileDirectoryMap.id as id,FileDirectoryMap.fname as name,FileEntity.fsize as fsize\
+    sprintf(p.sql, "select FileDirectoryMap.id as id,FileDirectoryMap.fname as name,FileEntity.fsize as fsize,FileDirectoryMap.last_change_time as last_change_time\
      from FileDirectoryMap join FileEntity on FileEntity.id=FileDirectoryMap.fid where FileDirectoryMap.did=%d",
             dir_id);
     if (p.execute() == -1)
@@ -56,7 +56,7 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
         for (auto j = data[i].begin(); j != data[i].end();)
         {
             fin_data += '\"' + j->first + "\":";
-            if (j->first == "name")
+            if (j->first == "name" || j->first == "last_change_time")
             {
                 fin_data += '\"' + j->second + '\"';
             }
