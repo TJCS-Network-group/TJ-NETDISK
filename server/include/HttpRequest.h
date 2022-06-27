@@ -82,3 +82,5 @@ public:
     }
     ~HttpRequest() { clear(); }
 };
+
+HttpRequest http_recv_request(int sockfd);

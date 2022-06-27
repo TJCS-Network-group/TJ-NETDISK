@@ -1,8 +1,10 @@
 //解析client端传入的HTTP请求
 #include "../include/HttpRequest.h"
 #include "../include/HttpTool.h"
+#include <cstring>
 #include <fstream>
 #include <iostream>
+#include <sys/socket.h>
 using namespace std;
 // 解析请求报文
 // resouce以'/'开头
@@ -269,4 +271,45 @@ void HttpRequest::Parse_request_body()
             }
         }
     }
+}
+
+const int BUFFER_SIZE = 20000;
+char buf[BUFFER_SIZE]; //接收传过来的http request请求，暂时用2万字节存，可能不够大，要注意一下
+
+//不停的收 直到断开连接或者收到完整HTTP报文 此后应该设置超时退出条件
+HttpRequest http_recv_request(int sockfd)
+{ //传入accept的socketfd
+    memset(buf, 0, BUFFER_SIZE);
+    int len = recv(sockfd, buf, BUFFER_SIZE, 0); //第一次接受数据，把所有header找到
+    // buf[len] = '\0';
+    cout << "len: " << len << endl;
+
+    string client_http_request(buf, len);
+    //创建一个HttpRequest对象解析第一次发过来的原报文（包含完整header, 但可能不包含完整body）
+    HttpRequest new_request(client_http_request);
+
+    while (new_request.Read_body_over() == false) //收到Content-Length没达到body值
+    {
+        memset(buf, 0, BUFFER_SIZE);
+        int len = recv(sockfd, buf, BUFFER_SIZE, 0); //接受数据
+        cout << "len: " << len << endl;
+        if (len == -1)
+        {
+            cerr << "Error: recv\n";
+            exit(EXIT_FAILURE);
+        }
+        else if (len == 0) // disconnect
+        {
+            break;
+        }
+        //把buf数据copy到body中
+        string tep_str(buf, len);
+        new_request.Concat_body(tep_str);
+    }
+    if (len != 0)
+    {
+        //创建一个HttpRequest对象解析原报文，需加入超时和try机制
+        new_request.Parse_request_body(); //解析body
+    }
+    return new_request;
 }

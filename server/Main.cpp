@@ -3,9 +3,6 @@
 #include "./include/HttpServer.h"
 #include <arpa/inet.h>
 #include <cerrno>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -18,48 +15,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 using namespace std;
-const int BUFFER_SIZE = 100000;
-char buf[BUFFER_SIZE]; //接收传过来的http request请求，暂时用十万字节存，可能不够大，要注意一下
 
-//不停的收 直到断开连接或者收到完整HTTP报文 此后应该设置超时退出条件
-HttpRequest http_recv_request(int sockfd)
-{ //传入accept的socketfd
-    memset(buf, 0, BUFFER_SIZE);
-    int len = recv(sockfd, buf, BUFFER_SIZE, 0); //第一次接受数据，把所有header找到
-    // buf[len] = '\0';
-    cout << "len: " << len << endl;
-
-    string client_http_request(buf, len);
-    //创建一个HttpRequest对象解析第一次发过来的原报文（包含完整header, 但可能不包含完整body）
-    HttpRequest new_request(client_http_request);
-
-    while (new_request.Read_body_over() == false) //收到Content-Length没达到body值
-    {
-        memset(buf, 0, BUFFER_SIZE);
-        int len = recv(sockfd, buf, BUFFER_SIZE, 0); //接受数据
-        cout << "len: " << len << endl;
-        if (len == -1)
-        {
-            cerr << "Error: recv\n";
-            cerr << errno << endl
-                 << strerror(errno) << endl;
-            exit(EXIT_FAILURE);
-        }
-        else if (len == 0) // disconnect
-        {
-            break;
-        }
-        //把buf数据copy到body中
-        string tep_str(buf, len);
-        new_request.Concat_body(tep_str);
-    }
-    if (len != 0)
-    {
-        //创建一个HttpRequest对象解析原报文，需加入超时和try机制
-        new_request.Parse_request_body(); //解析body
-    }
-    return new_request;
-}
 const int MAX_LISTEN_QUEUE = 100; // listen
 const int PORT = 7777;            // server port
 const int MAX_EPOLL_EVENT = 2048;
@@ -82,13 +38,7 @@ int setnonblocking(int sock)
     }
     return 0;
 }
-/*
-struct Myepoll_data
-{
-    char *data;
-    int length;
-};
-*/
+
 int main()
 {
     Routers routers;        //路由表
@@ -224,40 +174,7 @@ int main()
 
                     string send_content = new_response.getMessage(); //要发给client端的报文，不一定要返回string了
                     send(sockfd, send_content.c_str(), send_content.length(), 0);
-                    /*
-                    Myepoll_data *tep = (Myepoll_data *)malloc(sizeof(Myepoll_data));
-                    tep->length = send_content.length();
-                    tep->data = (char *)malloc(send_content.length() + 1);
-                    memcpy(tep->data, send_content.c_str(), send_content.length() + 1);
-                    tep->data[tep->length] = '\0';
-                    cout << tep->data << endl;
-                    cout << "读current fd: " << sockfd << endl;
-                    ev.data.ptr = tep;
-                    cout << "读时指针的值: " << ev.data.ptr << endl;
-                    ev.data.fd = sockfd;
-                    ev.events = EPOLLOUT | EPOLLET; // OUT
-                    epoll_ctl(epollfd, EPOLL_CTL_MOD, sockfd, &ev);
-                    */
                 }
-            }
-            else if (events[i].events & EPOLLOUT) //有数据待发送，写socket
-            {
-                cout << "貌似没有out的事件" << endl;
-                /*
-                cout << "准备取数据" << endl;
-                Myepoll_data *md = (Myepoll_data *)events[i].data.ptr; //取数据
-                cout << "写时指针的值: " << md << endl;
-                cout << "转成功" << endl;
-                cout << "写current fd: " << sockfd << endl;
-                cout << md->length << endl;
-                send(sockfd, md->data, md->length, 0); //发送数据
-                free(md->data);
-                free(md);
-
-                ev.data.fd = sockfd;
-                ev.events = EPOLLIN | EPOLLET;
-                epoll_ctl(epollfd, EPOLL_CTL_MOD, sockfd, &ev); //修改标识符，等待下一个循环时接收数据
-                */
             }
         }
     }
