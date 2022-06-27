@@ -23,14 +23,17 @@ HttpResponse GET_download_fragment(HttpRequest &req)
     p.connect();
     sprintf(p.sql, "select FileFragmentEntity.MD5 as MD5 from FileFragmentMap\
     join FileFragmentEntity on FileFragmentEntity.id=FileFragmentMap.fgid \
-    join FileEntity on FileDirectoryMap.fid=FileEntity.id \
-    where FileDirectoryMap.id=%d and FileFragmentMap.`index`=%d",
+    join FileDirectoryMap on FileDirectoryMap.fid=FileFragmentMap.fid \
+    where FileDirectoryMap.id = % d and FileFragmentMap.`index`= % d ",
             fdid, index);
+    // cout << p.sql << endl;
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错");
     }
     p.get();
+    // p.show();
+    // cout << p.result_vector.size() << endl;
     if (p.result_vector.size() == 0)
     {
         return make_response_json(404, "该文件碎块不存在");
