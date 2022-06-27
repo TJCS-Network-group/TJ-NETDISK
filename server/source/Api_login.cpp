@@ -73,7 +73,7 @@ HttpResponse POST_login(HttpRequest &req)
             {
                 cout << i.first << ":" << i.second << endl;
             }*/
-            resp.setHeader("Set-Cookie: sessionid=" + to_string(user_id) + "|" + result + "; HttpOnly; Path=/;");
+            resp.setHeader("Set-Cookie: sessionid=" + to_string(user_id) + "|" + result + "; HttpOnly; Path=/; max-age=77777");
             //给client的set-cookie，没设置expires,即仅限于此次回话
         }
         else
