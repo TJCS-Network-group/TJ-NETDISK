@@ -19,7 +19,6 @@ HttpResponse GET_download_fragment(HttpRequest &req)
     {
         return make_response_json(400, "请求格式不对");
     }
-    cout << file_id << index << endl;
     my_database p;
     p.connect();
     sprintf(p.sql, "select FileFragmentEntity.MD5 as MD5 from FileFragmentMap \

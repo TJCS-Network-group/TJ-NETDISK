@@ -1,6 +1,7 @@
 //解析client端传入的HTTP请求
 #include "../include/HttpRequest.h"
 #include "../include/HttpTool.h"
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
 #include <ctime>
@@ -112,6 +113,7 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
         { //不越界
             if (_raw_http_request[cur] == '\r' && _raw_http_request[cur + 1] == '\n')
             {
+                transform(key.begin(), key.end(), key.begin(), ::tolower);
                 headers[key] = value;
                 find_key = true; //开始下一轮找key
 
@@ -141,7 +143,10 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     }
     origin_headers = _raw_http_request.substr(0, cur - 2);
     body = _raw_http_request.substr(cur);
-    /*
+
+    cout << "ROUTE:" << endl;
+    cout << route << endl;
+
     cout << "PARAMS:" << endl;
     for (auto i : params)
     {
@@ -152,15 +157,16 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     for (auto i : headers)
     {
         cout << i.first << ":" << i.second << endl;
-    }*/
+    }
+
     // cout << "SESSION: " << endl;
     // for (auto i : session)
     //{
     //     cout << i.first << ": " << i.second << endl;
     // }
-    if (headers.count("Cookie") != 0)
+    if (headers.count("cookie") != 0)
     { //有cookie
-        string cookie = headers["Cookie"];
+        string cookie = headers["cookie"];
         string current_user_str;
         // cookie结构： sessionid=1951705|{md5};
         string sub_str = "sessionid=";
@@ -205,9 +211,9 @@ void HttpRequest::Parse_request_body()
     bool flag = true;
     time_t past_time;
     time(&past_time);
-    if (headers.count("Content-Type") != 0)
+    if (headers.count("content-type") != 0)
     {
-        string type = headers["Content-Type"];
+        string type = headers["content-type"];
         // cout << type << endl;
         {
             size_t pos = type.find("application/json");

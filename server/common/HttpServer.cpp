@@ -60,7 +60,7 @@ HttpResponse Routers::getResponse(HttpRequest &req)
         // cout << iter.first.first << endl;
         // cout << req.route << endl;
         // cout << iter.first.second << endl;
-        if (req.method == iter.first.first && req.route == iter.first.second)
+        if (req.method == iter.first.first && req.route.find(iter.first.second) != req.route.npos)
         {
             return iter.second(req); //传入request；传出response
         }

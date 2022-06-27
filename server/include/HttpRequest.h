@@ -34,10 +34,10 @@ public:
     void Concat_body(const std::string _body) { body += _body; }
     bool Read_body_over()
     {
-        if (headers.count("Content-Length") != 0)
+        if (headers.count("content-length") != 0)
         { //存在length字段且body的长度与length的长度不一致 认为还没读完body
-            int len = atoi(headers["Content-Length"].c_str());
-            // std::cout << "Content-Length: " << len << std::endl;
+            int len = atoi(headers["content-length"].c_str());
+            // std::cout << "content-length: " << len << std::endl;
             // std::cout << "body len: " << body.length() << std::endl;
             if (body.length() < len)
                 return false;
