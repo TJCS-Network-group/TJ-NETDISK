@@ -23,7 +23,7 @@ const int MAX_LISTEN_QUEUE = 100; // listen queue
 const int PORT = 7777;            // server port
 const int MAX_EPOLL_EVENT = 2048;
 const int MAX_EPOLL_SIZE = 2048;
-const int BUFFER_SIZE = 4500000; //该项目中合法的包不可能超过这个
+const int BUFFER_SIZE = 4500000; //该项目中合法的包长度不可能超过这个
 char buf[BUFFER_SIZE];           //接收传过来的http request请求，暂时用一百万字节存，可能不够大，要注意一下
 
 int setnonblocking(int sock)
@@ -236,6 +236,14 @@ int main()
                         string client_http_request(buf, len);
                         //创建一个HttpRequest对象解析原报文
                         HttpRequest new_request(client_http_request);
+
+                        struct sockaddr_in clientAddr;
+                        socklen_t clientAddrLen = sizeof(clientAddr);
+                        char clientIP[INET_ADDRSTRLEN] = "";
+                        getpeername(socketfd, (struct sockaddr *)&clientAddr, &clientAddrLen);
+                        inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, INET_ADDRSTRLEN);
+                        new_request.Set_IP(clientIP, clientAddr.sin_port);
+
                         if (new_request.Get_request_len() == len) //读完了
                             epoll_mod_out(routers, buf, len, socketfd, epollfd);
                         else
