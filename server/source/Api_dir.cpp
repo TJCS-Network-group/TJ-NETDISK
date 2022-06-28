@@ -25,7 +25,7 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
     p.get();
     if (p.result_vector.size() == 0)
     {
-        return make_response_json(200, "该目录无文件");
+        return make_response_json(200, "该目录无文件", "[]");
     }
     sprintf(p.sql, "select id,dname as name,last_change_time from DirectoryEntity where parent_id=%d and id!=%d", dir_id, dir_id);
     if (p.execute() == -1)
