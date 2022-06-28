@@ -1,3 +1,4 @@
+# -*- coding: gbk -*-
 import requests
 from hashlib import md5
 import json
@@ -18,7 +19,7 @@ def get_file_md5(file_path):
 
 
 def login():
-    """å…ˆç™»å½•"""
+    """ÏÈµÇÂ¼"""
     url = f"{test_url}/api/login"
     payload = json.dumps({"user_name": "test", "password": "test"})
     headers['Content-Type'] = 'application/json'
@@ -28,14 +29,14 @@ def login():
 
 
 def get_file_exist(file_path):
-    """æ–‡ä»¶æ˜¯å¦å­˜åœ¨"""
+    """ÎÄ¼şÊÇ·ñ´æÔÚ"""
     url = f"{test_url}/api/file_exist" + "?md5=" + get_file_md5(file_path)
     response = requests.request("GET", url, headers=headers)
     return response.json()["data"]["is_exist"]
 
 
 def get_file_fragment_exist(file_path):
-    """æ–‡ä»¶ç¢ç‰‡æ˜¯å¦å­˜åœ¨"""
+    """ÎÄ¼şËéÆ¬ÊÇ·ñ´æÔÚ"""
     url = f"{test_url}/api/file_fragment_exist" + "?md5=" + get_file_md5(
         file_path)
     response = requests.request("GET", url, headers=headers)
@@ -43,7 +44,7 @@ def get_file_fragment_exist(file_path):
 
 
 def upload_fragment(fragment_path, index, file_md5, post_fragment):
-    """ä¸Šä¼ ç¢ç‰‡"""
+    """ÉÏ´«ËéÆ¬"""
     payload = {
         "index": index,
         "file_md5": file_md5,
@@ -60,7 +61,7 @@ def upload_fragment(fragment_path, index, file_md5, post_fragment):
                                     files=files)
     else:
         response = requests.request("POST", url, headers=headers, data=payload)
-    print("ä¸Šä¼ æ–‡ä»¶ç¢ç‰‡ï¼š", response.json())
+    print("ÉÏ´«ÎÄ¼şËéÆ¬£º", response.json())
 
 
 def get_root_id():
@@ -70,7 +71,7 @@ def get_root_id():
 
 
 def upload_file(filename, file_md5, parent_dir_id=2):
-    """ä¸Šä¼ æ–‡ä»¶"""
+    """ÉÏ´«ÎÄ¼ş"""
     url = f"{test_url}/api/upload_file"
     payload = json.dumps({
         "filename": filename,
@@ -80,11 +81,11 @@ def upload_file(filename, file_md5, parent_dir_id=2):
     headers['Content-Type'] = 'application/json'
     response = requests.request("POST", url, headers=headers, data=payload)
     headers.pop("Content-Type")
-    print("ä¸Šä¼ æ–‡ä»¶ï¼š", response.json())
+    print("ÉÏ´«ÎÄ¼ş£º", response.json())
 
 
 def get_upload_allocation(md5, size):
-    """è·å–è¦ä¸Šä¼ çš„æ–‡ä»¶å—å·"""
+    """»ñÈ¡ÒªÉÏ´«µÄÎÄ¼ş¿éºÅ"""
     url = f"{test_url}/api/upload_allocation" + "?md5=" + md5 + "&size=" + str(
         size)
     response = requests.request("GET", url, headers=headers)
@@ -124,7 +125,7 @@ def main():
                                 next_index, get_file_md5(file_path),
                                 not fragment_exist)
             else:
-                print("è¯¥ç¢ç‰‡ç”±äºç½‘é€Ÿé—®é¢˜æœªä¸Šä¼ æˆåŠŸ")
+                print("¸ÃËéÆ¬ÓÉÓÚÍøËÙÎÊÌâÎ´ÉÏ´«³É¹¦")
             next_index = get_upload_allocation(get_file_md5(file_path), fsize)
         upload_file(filename, get_file_md5(file_path), get_root_id())
 
