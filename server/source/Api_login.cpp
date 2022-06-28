@@ -80,7 +80,7 @@ HttpResponse POST_login(HttpRequest &req)
             result = session[user_id];
         }
         resp.setHeader("Set-Cookie: sessionid=" + to_string(user_id) + "|" + result + "; HttpOnly; Path=/; max-age=7777777");
-        sprintf(p.sql, "insert into UserLogin(user_id,login_ip) value (%d,\"%s\")", user_id, req.clientIP);
+        sprintf(p.sql, "insert into UserLogin(user_id,login_ip) value (%d,\"%s\")", user_id, req.clientIP.c_str());
         if (p.execute() == -1)
         {
             return make_response_json(500, "database error");
