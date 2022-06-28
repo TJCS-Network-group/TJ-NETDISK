@@ -17,7 +17,12 @@ public:
     void setRouter(const std::string method, const std::string route, HttpResponse func(HttpRequest &req));
     //找路由表，返回响应
     HttpResponse getResponse(HttpRequest &req) const;
-
+    Routers &operator=(const Routers &t)
+    {
+        if (this != &t)
+            routers = t.routers;
+        return *this;
+    }
     //初始化路由表
     void Init_routers();
 };
