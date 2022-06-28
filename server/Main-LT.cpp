@@ -19,12 +19,12 @@
 #include <unistd.h>
 using namespace std;
 
-const int MAX_LISTEN_QUEUE = 100; // listen queue
+const int MAX_LISTEN_QUEUE = 100; // listen
 const int PORT = 7777;            // server port
 const int MAX_EPOLL_EVENT = 2048;
 const int MAX_EPOLL_SIZE = 2048;
-const int BUFFER_SIZE = 4500000; //该项目中合法的包不可能超过这个
-char buf[BUFFER_SIZE];           //接收传过来的http request请求，暂时用一百万字节存，可能不够大，要注意一下
+const int BUFFER_SIZE = 20000;
+char buf[BUFFER_SIZE]; //接收传过来的http request请求，暂时用一百万字节存，可能不够大，要注意一下
 
 int setnonblocking(int sock)
 {
@@ -91,7 +91,7 @@ int epoll_mod_out(const Routers &routers, const char *data, const int length, co
     resp->sockfd = socketfd;
     struct epoll_event ev;
     ev.data.ptr = (void *)resp;
-    ev.events = EPOLLOUT | EPOLLET; // OUT
+    ev.events = EPOLLOUT; // OUT
     return epoll_ctl(epollfd, EPOLL_CTL_MOD, socketfd, &ev);
 }
 int main()
@@ -145,7 +145,7 @@ int main()
     struct epoll_event ev, events[MAX_EPOLL_EVENT];
     memset(events, sizeof(events), 0);
 
-    ev.events = EPOLLIN | EPOLLET;
+    ev.events = EPOLLIN;
     Myepoll_data ev_data;
     ev_data.sockfd = listenfd;
     // ev.data.fd = listenfd;//使用ptr，不使用fd
@@ -193,7 +193,7 @@ int main()
                 if (setnonblocking(conn) == -1)
                     continue; //设为非阻塞
 
-                ev.events = EPOLLIN | EPOLLET;
+                ev.events = EPOLLIN;
                 Myepoll_data *tep = (Myepoll_data *)malloc(sizeof(Myepoll_data));
                 tep->init();
                 tep->sockfd = conn; // socket文件描述符
@@ -211,7 +211,8 @@ int main()
                 cout << "EPOLLIN" << endl;
                 memset(buf, 0, BUFFER_SIZE);
                 int len = recv(socketfd, buf, BUFFER_SIZE, 0); //接受数据
-                if (len == 0)                                  // recv出来len=0, 对方断开
+                cout << "len: " << len << endl;
+                if (len == 0) // recv出来len=0, 对方断开
                 {
                     struct sockaddr_in clientAddr;
                     socklen_t clientAddrLen = sizeof(clientAddr);
@@ -234,6 +235,8 @@ int main()
                 {
                     if (current_ptr->length == 0)
                     {
+                        cout << "enter first point" << endl;
+
                         string client_http_request(buf, len);
                         //创建一个HttpRequest对象解析原报文
                         HttpRequest new_request(client_http_request);
@@ -248,12 +251,14 @@ int main()
                             tep->sockfd = socketfd;
                             tep->recv_capacity = new_request.Get_request_len();
                             ev.data.ptr = (void *)tep; //从此不再是NULL
-                            ev.events = EPOLLIN | EPOLLET;
+                            ev.events = EPOLLIN;
                             epoll_ctl(epollfd, EPOLL_CTL_MOD, socketfd, &ev); //依然是read
                         }
                     }
                     else // recv追加新的内容
                     {
+                        cout << "enter next point" << endl;
+
                         Myepoll_data *md = (Myepoll_data *)events[i].data.ptr; //取上次的
                         md->data = (char *)realloc((void *)md->data, md->length + len);
                         memcpy(md->data + md->length, buf, len);
@@ -277,15 +282,23 @@ int main()
                                 free(md); //不再复用
                             }
                             else
-                            { //等待下次调度，继续读body/header即可
-                                ;
+                            {
+                                cout << "wait next1" << endl;
+                                // ev.data.ptr = (void *)md;
+                                // ev.events = EPOLLIN;
+                                // epoll_ctl(epollfd, EPOLL_CTL_MOD, socketfd, &ev); //依然是read
                             }
                         }
                         else //上次的header解析完了，但经过这一次发现body还没读完
                         {
+                            cout << "wait next2" << endl;
                             //等待下次调度，继续读body即可
-                            ;
+                            // ev.data.ptr = (void *)md;
+                            // ev.events = EPOLLIN;
+                            // epoll_ctl(epollfd, EPOLL_CTL_MOD, socketfd, &ev); //依然是read
                         }
+                        cout << "capacity: " << md->recv_capacity << endl;
+                        cout << "length: " << md->length << endl;
                     }
                 }
                 if (len < 0 && errno != EAGAIN)
@@ -302,9 +315,11 @@ int main()
                 if (md->length > md->send_length)
                 {
                     int len = send(md->sockfd, md->data + md->send_length, md->length - md->send_length, 0);
+                    cout << "send len: " << len << endl;
                     if (len > 0)
                     {
                         md->send_length += len;
+                        cout << "send_length_sum: " << md->send_length << endl;
                     }
                     else if (len < 0 && errno != EAGAIN)
                     {
@@ -321,7 +336,7 @@ int main()
                     md->clear();
                     md->sockfd = socketfd;
                     ev.data.ptr = (void *)md; //从send转到recv，可以复用上次的Myepoll_data *
-                    ev.events = EPOLLIN | EPOLLET;
+                    ev.events = EPOLLIN;
                     epoll_ctl(epollfd, EPOLL_CTL_MOD, md->sockfd, &ev);
                 }
             }
