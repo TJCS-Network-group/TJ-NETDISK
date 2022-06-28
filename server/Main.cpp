@@ -208,7 +208,6 @@ int main()
             }
             else if (events[i].events & EPOLLIN) //读新数据
             {
-                cout << "EPOLLIN" << endl;
                 memset(buf, 0, BUFFER_SIZE);
                 int len = recv(socketfd, buf, BUFFER_SIZE, 0); //接受数据
                 if (len == 0)                                  // recv出来len=0, 对方断开
@@ -297,7 +296,6 @@ int main()
             }
             else if (events[i].events & EPOLLOUT)
             {
-                cout << "EPOLLOUT" << endl;
                 Myepoll_data *md = (Myepoll_data *)events[i].data.ptr;
                 if (md->length > md->send_length)
                 {

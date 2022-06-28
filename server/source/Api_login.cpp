@@ -59,27 +59,27 @@ HttpResponse POST_login(HttpRequest &req)
     {
         user_id = atoi(p.result_vector[0]["id"].c_str());
         resp = make_response_json(200);
-        srand(time(NULL));
-        string cmd = "echo -n " + user_name + to_string(rand()) + " | md5sum", result;
-        if (popen_cmd(cmd, result, 32 + 1) != -1)
+        string result;
+        if (session.count(user_id) == 0) //还不存在cookie
         {
-
-            // 通过md5加密{user_name,rand}并保存在session
-            // 对于每个用户的每个会话，这个md5值应该要一致
-            session[user_id] = result;
-            // cout << "Login session: " << endl;
-            /*
-            for (auto i : session)
+            srand(time(NULL));
+            string cmd = "echo -n " + user_name + to_string(rand()) + " | md5sum";
+            if (popen_cmd(cmd, result, 32 + 1) != -1)
             {
-                cout << i.first << ":" << i.second << endl;
-            }*/
-            resp.setHeader("Set-Cookie: sessionid=" + to_string(user_id) + "|" + result + "; HttpOnly; Path=/; max-age=77777");
-            //给client的set-cookie，没设置expires,即仅限于此次回话
+                // 通过md5加密{user_name,rand}并保存在session
+                // 对于每个用户的每个会话，这个md5值应该要一致
+                session[user_id] = result;
+            }
+            else
+            {
+                return make_response_json(500, "popen_err");
+            }
         }
         else
         {
-            return make_response_json(500, "popen_err");
+            result = session[user_id];
         }
+        resp.setHeader("Set-Cookie: sessionid=" + to_string(user_id) + "|" + result + "; HttpOnly; Path=/; max-age=7777777");
     }
     else
     {

@@ -195,12 +195,12 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
 
             if (session.count(current_user_id) == 0 || md5 != session[current_user_id])
             { //与session中的表项对比
-                cout << "cookie错误！" << endl;
+                // cout << "cookie错误！" << endl;
                 current_user_id = 0;
             }
         }
     }
-    cout << "current_user_id:" << current_user_id << endl;
+    // cout << "current_user_id:" << current_user_id << endl;
 }
 int find_name_form_data(string &content, string &find_name, string &result)
 {
@@ -228,8 +228,8 @@ void HttpRequest::Parse_request_body()
             if (pos != type.npos)
             { //找到了子串"application/json"，是json
                 json = JSON(body);
-                cout << "JSON:\n"
-                     << json << endl;
+                // cout << "JSON:\n"
+                //      << json << endl;
             }
         }
         {
