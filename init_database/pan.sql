@@ -47,3 +47,9 @@ create table UserEntity(
 	`root_dir_id` INT NOT NULL,
     constraint UE_root_dir_id foreign key(`root_dir_id`) references `DirectoryEntity`(`id`)
 );
+create table UserLogin(
+    `user_id` INT NOT NULL,
+    constraint LUSER foreign key(`user_id`) references UserEntity(`id`),
+    `login_ip` varchar(100) NOT NULL,
+    `login_time` TIMESTAMP NOT NULL default current_timestamp on update current_timestamp
+)
