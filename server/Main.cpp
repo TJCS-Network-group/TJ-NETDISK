@@ -209,6 +209,7 @@ int main()
             }
             else if (events[i].events & EPOLLIN) //读新数据
             {
+                cout << "EPOLLIN" << endl;
                 memset(buf, 0, BUFFER_SIZE);
                 int len = recv(socketfd, buf, BUFFER_SIZE, 0); //接受数据
                 // cout << "len: " << len << endl;
@@ -233,14 +234,13 @@ int main()
                 }
                 if (len > 0)
                 {
-                    // cout << events[i].data.ptr << endl;
                     if (current_ptr->length == 0)
                     {
-                        // cout << "enter first point" << endl;
+                        cout << "enter first point" << endl;
+
                         string client_http_request(buf, len);
                         //创建一个HttpRequest对象解析原报文
                         HttpRequest new_request(client_http_request);
-                        // cout << "Parser Header" << endl;
                         if (new_request.Get_request_len() == len) //读完了
                             epoll_mod_out(routers, buf, len, socketfd, epollfd);
                         else
@@ -258,18 +258,22 @@ int main()
                     }
                     else // recv追加新的内容
                     {
+                        cout << "enter next point" << endl;
+
                         Myepoll_data *md = (Myepoll_data *)events[i].data.ptr; //取上次的
                         md = (Myepoll_data *)realloc((void *)md, md->length + len);
                         memcpy(md->data + md->length, buf, len);
                         md->length += len;                   //更新length
                         if (md->recv_capacity == md->length) //上次的header都解析完了，这里等于就相当于读完了
                         {
+                            cout << "done1" << endl;
                             epoll_mod_out(routers, md->data, md->length, socketfd, epollfd);
                             md->clear();
                             free(md); //不再复用
                         }
                         else if (md->recv_capacity == -1) //上次的header都没解析完，这次收到了要再解析一次
                         {
+                            cout << "done2" << endl;
                             string client_http_request(md->data, md->length);
                             //创建一个HttpRequest对象解析原报文
                             HttpRequest new_request(client_http_request);
@@ -289,6 +293,7 @@ int main()
                         }
                         else //上次的header解析完了，但经过这一次发现body还没读完
                         {
+                            cout << "done3" << endl;
                             //等待下次调度，继续读body即可
                             ev.data.ptr = (void *)md; // realloc可能是新指针
                             ev.events = EPOLLIN | EPOLLET;
@@ -305,8 +310,8 @@ int main()
             }
             else if (events[i].events & EPOLLOUT)
             {
+                cout << "EPOLLOUT" << endl;
                 Myepoll_data *md = (Myepoll_data *)events[i].data.ptr;
-
                 int len_sum = 0;
                 // cout << "max_len: " << md->length << endl;
                 while (len_sum < md->length)
@@ -316,7 +321,7 @@ int main()
                     if (len > 0)
                     {
                         len_sum += len;
-                        // cout << "len_sum: " << len_sum << endl;
+                        cout << "len_sum: " << len_sum << endl;
                     }
                     else if (len < 0 && errno != EAGAIN)
                     {
@@ -328,6 +333,7 @@ int main()
                     }
                 }
                 md->clear();
+                md->sockfd = socketfd;
                 ev.data.ptr = (void *)md; //从send转到recv，可以复用上次的Myepoll_data *
                 ev.events = EPOLLIN | EPOLLET;
                 epoll_ctl(epollfd, EPOLL_CTL_MOD, md->sockfd, &ev);
