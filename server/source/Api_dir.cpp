@@ -17,9 +17,7 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
     dir_id = atoi(req.params["dir_id"].c_str());
     my_database p;
     p.connect();
-    sprintf(p.sql, "select FileDirectoryMap.id as id,FileDirectoryMap.fname as name,FileEntity.fsize as fsize,FileDirectoryMap.last_change_time as last_change_time\
-     from FileDirectoryMap join FileEntity on FileEntity.id=FileDirectoryMap.fid where FileDirectoryMap.did=%d",
-            dir_id);
+    sprintf(p.sql, "select * from DirectoryEntity where id=%d", dir_id);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
@@ -29,16 +27,25 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
     {
         return make_response_json(404, "未找到该目录");
     }
+    sprintf(p.sql, "select id,dname as name,last_change_time from DirectoryEntity where parent_id=%d and id!=%d", dir_id, dir_id);
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
+    }
+    p.get();
     map<string, string> d;
     vector<map<string, string>> data;
     for (size_t i = 0; i < p.result_vector.size(); i++)
     {
         map<string, string>().swap(d);
         d.insert(p.result_vector[i].begin(), p.result_vector[i].end());
-        d["type"] = "0";
+        d["type"] = "1";
+        // d["size"] = "0";
         data.push_back(d);
     }
-    sprintf(p.sql, "select id,dname as name,last_change_time from DirectoryEntity where parent_id=%d and id!=%d", dir_id, dir_id);
+    sprintf(p.sql, "select FileDirectoryMap.id as id,FileDirectoryMap.fname as name,FileEntity.fsize as fsize,FileDirectoryMap.last_change_time as last_change_time\
+     from FileDirectoryMap join FileEntity on FileEntity.id=FileDirectoryMap.fid where FileDirectoryMap.did=%d",
+            dir_id);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
@@ -48,8 +55,7 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
     {
         map<string, string>().swap(d);
         d.insert(p.result_vector[i].begin(), p.result_vector[i].end());
-        d["type"] = "1";
-        // d["size"] = "0";
+        d["type"] = "0";
         data.push_back(d);
     }
     p.disconnect();
