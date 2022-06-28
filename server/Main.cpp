@@ -74,6 +74,14 @@ int epoll_mod_out(const Routers &routers, const char *data, const int length, co
     string client_http_request(data, length);
     //创建一个HttpRequest对象解析原报文
     HttpRequest new_request(client_http_request);
+
+    struct sockaddr_in clientAddr;
+    socklen_t clientAddrLen = sizeof(clientAddr);
+    char clientIP[INET_ADDRSTRLEN] = "";
+    getpeername(socketfd, (struct sockaddr *)&clientAddr, &clientAddrLen);
+    inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, INET_ADDRSTRLEN);
+    new_request.Set_IP(clientIP, clientAddr.sin_port);
+
     if (new_request.Get_body_len() > 0) //有则解析body
     {
         new_request.Parse_request_body();
@@ -236,14 +244,6 @@ int main()
                         string client_http_request(buf, len);
                         //创建一个HttpRequest对象解析原报文
                         HttpRequest new_request(client_http_request);
-
-                        struct sockaddr_in clientAddr;
-                        socklen_t clientAddrLen = sizeof(clientAddr);
-                        char clientIP[INET_ADDRSTRLEN] = "";
-                        getpeername(socketfd, (struct sockaddr *)&clientAddr, &clientAddrLen);
-                        inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, INET_ADDRSTRLEN);
-                        new_request.Set_IP(clientIP, clientAddr.sin_port);
-
                         if (new_request.Get_request_len() == len) //读完了
                             epoll_mod_out(routers, buf, len, socketfd, epollfd);
                         else

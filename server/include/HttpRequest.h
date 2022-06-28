@@ -18,7 +18,7 @@ public:
     std::string body;                             // Type为JSON或form-data时body的内容
     JSON json;                                    // body中含有json时需要
     std::map<std::string, std::string> form_data; //若含有文件，除了api规定的字段外，此map中会新加一个filename字段
-    string clientIP;
+    std::string clientIP;
     int clientPort;
     int current_user_id;
     bool disconnect;
@@ -34,7 +34,7 @@ public:
         Parse_request_header(_raw_http_request);
     }
     void Concat_body(const std::string _body) { body += _body; }
-    void Set_IP(const char *ip, int Port)
+    void Set_IP(const char *ip, const int Port)
     {
         clientIP = ip;
         clientPort = Port;
