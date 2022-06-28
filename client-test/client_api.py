@@ -10,6 +10,7 @@ class client(object):
     def logout(self):
         req = requests.get(url=self.host+"/api/logout",headers=self.headers)
         ans = json.loads(req.text)
+        self.headers.pop("Cookie")
         return ans
 
     def get_dir_tree(self):
