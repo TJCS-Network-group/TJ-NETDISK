@@ -219,3 +219,56 @@ int Parse_params(const string &params_str, map<string, string> &params)
         return -1;
     return 0;
 }
+bool check_password(const string &password)
+{
+    if (password.length() < 12)
+    {
+        return false;
+    }
+    bool small = false, big = false, num = false, other = false;
+    int class_number = 0;
+    for (int i = 0; i != password.length(); i++)
+    {
+        if (password[i] >= 'a' && password[i] <= 'z')
+        {
+            if (!small)
+            {
+                small = true;
+                class_number += 1;
+                if (class_number == 3)
+                    break;
+            }
+        }
+        else if (password[i] >= 'A' && password[i] <= 'Z')
+        {
+            if (!big)
+            {
+                big = true;
+                class_number += 1;
+                if (class_number == 3)
+                    break;
+            }
+        }
+        else if (password[i] >= '0' && password[i] <= '9')
+        {
+            if (!num)
+            {
+                num = true;
+                class_number += 1;
+                if (class_number == 3)
+                    break;
+            }
+        }
+        else
+        {
+            if (!other)
+            {
+                other = true;
+                class_number += 1;
+                if (class_number == 3)
+                    break;
+            }
+        }
+    }
+    return class_number == 3;
+}

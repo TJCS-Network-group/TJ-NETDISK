@@ -80,6 +80,11 @@ HttpResponse POST_login(HttpRequest &req)
             result = session[user_id];
         }
         resp.setHeader("Set-Cookie: sessionid=" + to_string(user_id) + "|" + result + "; HttpOnly; Path=/; max-age=7777777");
+        sprintf(p.sql, "insert into UserLogin(user_id,login_ip) value (%d,\"%s\")", user_id, req.clientIP.c_str());
+        if (p.execute() == -1)
+        {
+            return make_response_json(500, "database error");
+        }
     }
     else
     {
@@ -101,6 +106,10 @@ HttpResponse POST_register(HttpRequest &req)
     catch (exception e)
     {
         return make_response_json(400, "请求格式不对");
+    }
+    if (!check_password(password))
+    {
+        return make_response_json(400, "密码不符合规范,密码长度需超过12位,并且至少出现大写字母、小写字母、数字、其他字符中的任意三种");
     }
     HttpResponse resp;
     //添加用户实体表项
