@@ -25,6 +25,10 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.get();
+    if (p.result_vector.size() == 0)
+    {
+        return make_response_json(404, "未找到该目录");
+    }
     map<string, string> d;
     vector<map<string, string>> data;
     for (size_t i = 0; i < p.result_vector.size(); i++)
