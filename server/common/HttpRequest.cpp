@@ -24,8 +24,8 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     bool flag = true;
     time_t past_time;
     time(&past_time);
-    // cout << _raw_http_request << endl;
-    if (_raw_http_request.length() == 0)
+
+    if (_raw_http_request.length() == 0) // len=0
     {
         disconnect = true;
         return;
@@ -97,9 +97,10 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
         time(&cur_time);
         if (cur_time - past_time >= TIME_OUT)
         {
-            // disconnect = true;
             flag = false;
-            // return;//没有header也不是不行
+            wait_header = true;
+            // disconnect = true;
+            // return;//header没传完也不是不行
         }
 
         if (_raw_http_request[cur] == ':')
@@ -130,7 +131,12 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
             }
         }
         else
-            break;
+        {
+            // header没传完
+            flag = false;
+            wait_header = true;
+        }
+
         if (find_key == true)
         {
             key.push_back(_raw_http_request[cur]);
@@ -142,6 +148,7 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
         ++cur;
     }
     origin_headers = _raw_http_request.substr(0, cur - 2);
+    wait_header = false; // header解析完成
     body = _raw_http_request.substr(cur);
     /*
     cout << "ROUTE:" << endl;
@@ -193,7 +200,7 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
             }
         }
     }
-    // cout << "current_user_id:" << current_user_id << endl;
+    cout << "current_user_id:" << current_user_id << endl;
 }
 int find_name_form_data(string &content, string &find_name, string &result)
 {
@@ -317,7 +324,7 @@ void HttpRequest::Parse_request_body()
         }
     }
 }
-
+/*
 const int BUFFER_SIZE = 20000;
 char buf[BUFFER_SIZE]; //接收传过来的http request请求，暂时用2万字节存，可能不够大，要注意一下
 
@@ -370,3 +377,4 @@ HttpRequest http_recv_request(int sockfd)
     }
     return new_request;
 }
+*/

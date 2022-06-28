@@ -20,6 +20,7 @@ public:
     std::map<std::string, std::string> form_data; //若含有文件，除了api规定的字段外，此map中会新加一个filename字段
     int current_user_id;
     bool disconnect;
+    bool wait_header;
 
     //解析(包含headers的)请求报文
     void Parse_request_header(const std::string _raw_http_request);
@@ -44,12 +45,34 @@ public:
         }
         return true;
     }
+    int Get_body_len() //获取此次报文body的长度, 不一定要等body传输完毕
+    {
+        if (wait_header)
+            return -1;
+        else
+        {
+            if (headers.count("content-length") != 0)
+                return atoi(headers["content-length"].c_str());
+            else
+                return 0;
+        }
+    }
+    int Get_request_len() //获取此次报文的总长度
+    {
+        if (wait_header)
+            return -1;
+        else
+        {
+            return origin_headers.length() + 2 + Get_body_len();
+        }
+    }
     //获取原始数据
     std::string Get_origin_headers() { return origin_headers; }
     std::string Get_body() { return body; }
     void clear()
     {
         disconnect = false;
+        wait_header = true;
         current_user_id = 0; // current_user_id为0代表没登录
         http_version.clear();
         route.clear();
@@ -66,6 +89,7 @@ public:
         // 避免自赋值 深拷贝
         if (this != &t)
         {
+            wait_header = wait_header;
             http_version = t.http_version;
             route = t.route;
             method = t.method;
@@ -83,4 +107,4 @@ public:
     ~HttpRequest() { clear(); }
 };
 
-HttpRequest http_recv_request(int sockfd);
+// HttpRequest http_recv_request(int sockfd);

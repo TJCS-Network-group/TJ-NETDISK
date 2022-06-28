@@ -16,7 +16,7 @@ public:
         body.clear();
     }
     std::string getMessage() { return header + "\r\n" + body; }
-
+    std::string getHeaders() { return header; }
     // HttpResponse() {}
     //我们server端默认返回200 OK了，在API标准接口处statusCode再指定别的
     HttpResponse(const std::string status = "200 OK") { setStatus(status); }

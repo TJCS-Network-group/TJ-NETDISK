@@ -16,7 +16,7 @@ public:
     //设置路由
     void setRouter(const std::string method, const std::string route, HttpResponse func(HttpRequest &req));
     //找路由表，返回响应
-    HttpResponse getResponse(HttpRequest &req);
+    HttpResponse getResponse(HttpRequest &req) const;
 
     //初始化路由表
     void Init_routers();
