@@ -199,7 +199,7 @@ HttpResponse POST_upload_file(HttpRequest &req)
     bool is_complete = atoi(add_map.result_vector[0]["is_complete"].c_str());
 
     //检查目录
-    sprintf(add_map.sql, "select id from DirectoryEntity where parent_id=\"%d\"", parent_dir_id);
+    sprintf(add_map.sql, "select id from DirectoryEntity where id=\"%d\"", parent_dir_id);
     // cout << add_map.sql << endl;
     if (add_map.execute() == -1)
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");

@@ -212,7 +212,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
             p.get();
             for (size_t i = 0; i < p.result_vector.size(); i++)
             {
-                cout << "has index:" << atoi(p.result_vector[i]["index"].c_str()) << endl;
+                // cout << "has index:" << atoi(p.result_vector[i]["index"].c_str()) << endl;
                 indexs.erase(atoi(p.result_vector[i]["index"].c_str()));
             }
             if (indexs.find(now_index) == indexs.end())
@@ -245,7 +245,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
             {
                 next_index = *indexs.begin();
             }
-            cout << "next_index:" << next_index << endl;
+            // cout << "next_index:" << next_index << endl;
             if (next_index != -1)
             {
                 sprintf(p.sql, "update FileEntity set next_index=%d where md5=\"%s\"", next_index, md5.c_str());
@@ -254,7 +254,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
             {
                 sprintf(p.sql, "update FileEntity set next_index=%d,is_complete=1 where md5=\"%s\"", next_index, md5.c_str());
             }
-            cout << p.sql << endl;
+            // cout << p.sql << endl;
             if (p.execute() == -1)
             {
                 return make_response_json(500, "数据库更新出错,请联系系统管理员");
