@@ -23,9 +23,12 @@ const int MAX_LISTEN_QUEUE = 100; // listen queue
 const int PORT = 7777;            // server port
 const int MAX_EPOLL_EVENT = 2048;
 const int MAX_EPOLL_SIZE = 2048;
+pthread_mutex_t mutex[MAX_EPOLL_SIZE] = {PTHREAD_MUTEX_INITIALIZER};
+pthread_t threads[MAX_EPOLL_SIZE];
 const int BUFFER_SIZE = 4500000; //该项目中合法的包长度不可能超过这个
 char buf[BUFFER_SIZE];           //接收传过来的http request请求，暂时用一百万字节存，可能不够大，要注意一下
-
+Routers routers;                 //路由表
+int epollfd;
 int setnonblocking(int sock)
 {
     int opts;
@@ -69,11 +72,18 @@ struct Myepoll_data
     }
 };
 //读完了 调用api得到response 将socketfd对应的模式转为epollout
-int epoll_mod_out(const Routers &routers, const char *data, const int length, const int socketfd, const int epollfd)
+void epoll_mod_out(void *data, const int length, const int socketfd, const bool is_free)
 {
-    string client_http_request(data, length);
+    string client_http_request((const char *)data, length);
+
+    if (is_free)
+    {
+        free(data);
+        data = NULL;
+    }
     //创建一个HttpRequest对象解析原报文
     HttpRequest new_request(client_http_request);
+    cout << new_request.Get_origin_headers() << endl;
 
     struct sockaddr_in clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
@@ -87,7 +97,6 @@ int epoll_mod_out(const Routers &routers, const char *data, const int length, co
         new_request.Parse_request_body();
     }
     HttpResponse new_response = routers.getResponse(new_request);
-    // cout << new_response.getHeaders() << endl;
     string send_content = new_response.getMessage();
 
     //因为从recv到send有可能不创建Myepoll_data *，因此就不再复用该指针
@@ -100,13 +109,45 @@ int epoll_mod_out(const Routers &routers, const char *data, const int length, co
     struct epoll_event ev;
     ev.data.ptr = (void *)resp;
     ev.events = EPOLLOUT | EPOLLET; // OUT
-    return epoll_ctl(epollfd, EPOLL_CTL_MOD, socketfd, &ev);
+    if (epoll_ctl(epollfd, EPOLL_CTL_MOD, socketfd, &ev) < 0)
+    {
+        cerr << "modify error" << endl;
+        // return
+    }
+}
+struct ThreadArg
+{
+    void *data;
+    int length;
+    int socketfd;
+    int isfree;
+};
+
+void *Epoll_mod_out_thread(void *param)
+{
+    ThreadArg *ptr = (ThreadArg *)param;
+    pthread_mutex_lock(&mutex[ptr->socketfd]);
+    epoll_mod_out(ptr->data, ptr->length, ptr->socketfd, ptr->isfree);
+    pthread_mutex_unlock(&mutex[ptr->socketfd]);
+    free(param);
+    pthread_exit(NULL);
+}
+void My_epoll_create_thread(char *data, const int length, const int socketfd, const bool isfree)
+{
+    ThreadArg *param = (ThreadArg *)malloc(sizeof(ThreadArg));
+    param->data = (void *)data;
+    param->length = length;
+    param->socketfd = socketfd;
+    param->isfree = isfree;
+
+    if (pthread_create(&threads[socketfd], NULL, Epoll_mod_out_thread, (void *)param) != 0)
+    {
+        cerr << "Error: pthread_create" << endl;
+    }
 }
 int main()
 {
-    Routers routers;        //路由表
     routers.Init_routers(); //注册api接口
-
     cout << "This is server" << endl;
 
     // 创建socket
@@ -143,7 +184,7 @@ int main()
     }
 
     // 创建epoll实例
-    int epollfd = epoll_create(MAX_EPOLL_SIZE);
+    epollfd = epoll_create(MAX_EPOLL_SIZE);
     if (epollfd == -1)
     {
         cerr << "Error: epoll_create" << endl;
@@ -183,6 +224,8 @@ int main()
         {
             Myepoll_data *current_ptr = (Myepoll_data *)(events[i].data.ptr);
             int socketfd = current_ptr->sockfd;
+            pthread_mutex_lock(&mutex[socketfd]);
+
             if (socketfd == listenfd) //有新的连接
             {
                 // accept建立新的连接
@@ -244,8 +287,11 @@ int main()
                         string client_http_request(buf, len);
                         //创建一个HttpRequest对象解析原报文
                         HttpRequest new_request(client_http_request);
+
                         if (new_request.Get_request_len() == len) //读完了
-                            epoll_mod_out(routers, buf, len, socketfd, epollfd);
+                        {
+                            My_epoll_create_thread(buf, len, socketfd, false);
+                        }
                         else
                         {
                             Myepoll_data *tep = (Myepoll_data *)malloc(sizeof(Myepoll_data));
@@ -267,8 +313,7 @@ int main()
                         md->length += len;                   //更新length
                         if (md->recv_capacity == md->length) //上次的header都解析完了，这里等于就相当于读完了
                         {
-                            epoll_mod_out(routers, md->data, md->length, socketfd, epollfd);
-                            md->clear();
+                            My_epoll_create_thread(md->data, md->length, socketfd, true);
                             free(md); //不再复用
                         }
                         else if (md->recv_capacity == -1) //上次的header都没解析完，这次收到了要再解析一次
@@ -279,8 +324,7 @@ int main()
                             md->recv_capacity = new_request.Get_request_len();
                             if (md->recv_capacity == len) //发现这次读完了
                             {
-                                epoll_mod_out(routers, md->data, md->length, socketfd, epollfd);
-                                md->clear();
+                                My_epoll_create_thread(md->data, md->length, socketfd, true);
                                 free(md); //不再复用
                             }
                             else
@@ -331,6 +375,7 @@ int main()
                     epoll_ctl(epollfd, EPOLL_CTL_MOD, md->sockfd, &ev);
                 }
             }
+            pthread_mutex_unlock(&mutex[socketfd]);
         }
     }
 
