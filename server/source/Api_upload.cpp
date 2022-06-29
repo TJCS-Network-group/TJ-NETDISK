@@ -154,7 +154,7 @@ HttpResponse POST_upload_fragment(HttpRequest &req)
 }
 bool check_file_name_legal(string file_name)
 {
-    cout<<file_name<<endl;
+    // cout<<file_name<<endl;
     if (file_name == "")
         return false;
     char illegal_chars[10] = {'\\', '/', '*', '?', '\"', '<', '>', '|'};
