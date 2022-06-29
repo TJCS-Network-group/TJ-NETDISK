@@ -144,6 +144,8 @@ int popen_cmd(string cmd, string &result, const int max_result_len)
     }
     else
     {
+        cout << "Popen Error,cmd: " << cmd << endl;
+        cout << errno << strerror(errno) << endl;
         ans = -1;
     }
     return ans;
@@ -174,6 +176,7 @@ int decoding_url(const string &url, string &result)
     string cmd = "printf %b $(echo -n \"" + url + "\" | sed \'s/\\\\/\\\\\\\\/g;s/\\(%\\)\\([0-9a-fA-F][0-9a-fA-F]\\)/\\\\x\\2/g\')";
 
     int size = popen_cmd(cmd, result, 4 * url.size());
+
     result = To_gbk(result);
     if (size != -1)
     {
@@ -185,15 +188,15 @@ int decoding_url(const string &url, string &result)
 
 int Parse_params(const string &params_str, map<string, string> &params)
 {
-    string key, value;
+    string key, value, newkey, newvalue;
     bool find_key = true;
     for (size_t i = 0; i < params_str.size(); ++i)
     {
         if (params_str[i] == '&')
         {
             find_key = true;
-            if (decoding_url(key, key) != -1 && decoding_url(value, value) != -1)
-                params.insert({key, value});
+            if (decoding_url(key, newkey) != -1 && decoding_url(value, newvalue) != -1)
+                params.insert({newkey, newvalue});
             else
                 return -1;
             key.clear();
@@ -213,8 +216,8 @@ int Parse_params(const string &params_str, map<string, string> &params)
             }
         }
     }
-    if (decoding_url(key, key) != -1 && decoding_url(value, value) != -1)
-        params.insert({key, value});
+    if (decoding_url(key, newkey) != -1 && decoding_url(value, newvalue) != -1)
+        params.insert({newkey, newvalue});
     else
         return -1;
     return 0;

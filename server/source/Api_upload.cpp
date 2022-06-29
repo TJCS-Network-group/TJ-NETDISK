@@ -31,7 +31,6 @@ HttpResponse POST_upload_fragment(HttpRequest &req)
         fragment_md5 = req.form_data["fragment_md5"];
         if (req.form_data.count("file_fragment") != 0)
             file_fragment = req.form_data["file_fragment"];
-            cout<< file_fragment<<endl;
         if (req.form_data.count("filename") != 0)
             file_name = req.form_data["filename"];
     }
@@ -154,7 +153,7 @@ HttpResponse POST_upload_fragment(HttpRequest &req)
 }
 bool check_file_name_legal(string file_name)
 {
-    cout<<file_name<<endl;
+    // cout << file_name << endl;
     if (file_name == "")
         return false;
     char illegal_chars[10] = {'\\', '/', '*', '?', '\"', '<', '>', '|'};
