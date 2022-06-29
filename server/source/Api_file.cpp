@@ -447,3 +447,48 @@ HttpResponse DEL_remove_file(HttpRequest &req)
     }
     return make_response_json(200, "删除成功");
 }
+HttpResponse GET_filesystem_get_md5code(HttpRequest &req)
+{
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(401, "当前用户未登录");
+    }
+    if (req.params.find("fdid") == req.params.end())
+    {
+        return make_response_json(400, "请求格式不对");
+    }
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
+    {
+        return make_response_json(-current_root_id, message);
+    }
+    int fdid = atoi(req.params["fdid"].c_str());
+    my_database p;
+    p.connect();
+    sprintf(p.sql, "select FileEntity.MD5 as MD5, FileDirectoryMap.did as did from FileDirectoryMap\
+     join FileEntity on FileEntity.id=FileDirectoryMap.fid  where FileDirectoryMap.id=%d",
+            fdid);
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库查询出错");
+    }
+    p.get();
+    if (p.result_vector.size() == 0)
+    {
+        return make_response_json(400, "查询了不存在的文件");
+    }
+    string MD5 = p.result_vector[0]["MD5"];
+    int did = atoi(p.result_vector[0]["did"].c_str());
+    int f_check = is_child(did, current_root_id, message);
+    if (f_check < 0)
+    {
+        return make_response_json(-f_check, message);
+    }
+    if (!f_check && did != current_root_id)
+    {
+        return make_response_json(400, "不可查看他人的文件");
+    }
+    string data = "{\"MD5\":\"" + MD5 + "\"}";
+    return make_response_json(200, "查询结果如下", data);
+}

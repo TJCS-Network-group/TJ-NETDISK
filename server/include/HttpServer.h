@@ -53,3 +53,4 @@ HttpResponse GET_share_get_dir_tree(HttpRequest &req);
 HttpResponse GET_filesystem_get_tree(HttpRequest &req);
 HttpResponse GET_myinfo(HttpRequest &req);
 HttpResponse GET_get_identity(HttpRequest &req);
+HttpResponse GET_filesystem_get_md5code(HttpRequest &req);

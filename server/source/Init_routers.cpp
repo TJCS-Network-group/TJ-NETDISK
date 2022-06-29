@@ -27,4 +27,5 @@ void Routers::Init_routers()
     setRouter("GET", "/api/filesystem/get_tree", GET_filesystem_get_tree);
     setRouter("GET", "/api/myinfo", GET_myinfo);
     setRouter("GET", "/api/get_identity", GET_get_identity);
+    setRouter("GET", "/api/filesystem/get_md5code", GET_filesystem_get_md5code);
 }
