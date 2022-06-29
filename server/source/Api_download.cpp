@@ -10,6 +10,10 @@ HttpResponse GET_download_fragment(HttpRequest &req)
 {
     int fdid;
     int index;
+    if (req.current_user_id == 0)
+    {
+        return make_response_json(400, "当前用户未登录");
+    }
     try
     {
         fdid = atoi(req.params["fdid"].c_str());
@@ -21,10 +25,17 @@ HttpResponse GET_download_fragment(HttpRequest &req)
     }
     my_database p;
     p.connect();
-    sprintf(p.sql, "select FileFragmentEntity.MD5 as MD5 from FileFragmentMap\
+    int check, dir_id;
+    string message;
+    int current_root_id = get_root_id_by_user(req.current_user_id, message);
+    if (current_root_id < 0)
+    {
+        return make_response_json(-current_root_id, message);
+    }
+    sprintf(p.sql, "select FileFragmentEntity.MD5 as MD5,FileDirectoryMap.did as did from FileFragmentMap\
     join FileFragmentEntity on FileFragmentEntity.id=FileFragmentMap.fgid \
     join FileDirectoryMap on FileDirectoryMap.fid=FileFragmentMap.fid \
-    where FileDirectoryMap.id = % d and FileFragmentMap.`index`= % d ",
+    where FileDirectoryMap.id = %d and FileFragmentMap.`index`= %d ",
             fdid, index);
     // cout << p.sql << endl;
     if (p.execute() == -1)
@@ -41,6 +52,16 @@ HttpResponse GET_download_fragment(HttpRequest &req)
     else if (p.result_vector.size() > 1)
     {
         return make_response_json(500, "数据库查询出错");
+    }
+    dir_id = atoi(p.result_vector[0]["did"].c_str());
+    check = is_child(dir_id, current_root_id, message);
+    if (check < 0)
+    {
+        return make_response_json(-check, message);
+    }
+    if (!check && dir_id != current_root_id)
+    {
+        return make_response_json(400, "用户无权下载他人文件碎片");
     }
     string file_path = "../pool/" + p.result_vector[0]["MD5"];
     // string file_path = "./request_file/sjk.png"; //碎片的地址
