@@ -38,3 +38,4 @@ int is_child(int first, int second, string &message);
 int remove_file(int file_dir_id, int current_root_id, bool is_checked, string &message);
 string get_dir_new_name(int did, int pid, int &statusCode);
 string get_file_new_name(string fname, int pid, int &statusCode);
+int get_tree(int did, string &message, bool search_file = false);

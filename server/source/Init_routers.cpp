@@ -24,6 +24,7 @@ void Routers::Init_routers()
     setRouter("DELETE", "/api/remove_file", DEL_remove_file);
     setRouter("DELETE", "/api/remove_dir", DEL_remove_dir);
     setRouter("GET", "/api/share/get_dir_tree", GET_share_get_dir_tree);
+    setRouter("GET", "/api/filesystem/get_tree", GET_filesystem_get_tree);
     setRouter("GET", "/api/myinfo", GET_myinfo);
     setRouter("GET", "/api/get_identity", GET_get_identity);
 }

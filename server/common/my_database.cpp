@@ -3,6 +3,7 @@
 #include <iostream> // cin,cout等
 #include <iomanip>  // setw等
 #include <cstdlib>
+#include <stack>
 using namespace std;
 const char *my_database::host = "localhost";
 
@@ -382,4 +383,101 @@ string get_file_new_name(string fname, int pid, int &statusCode)
     set<string>().swap(names);
     statusCode = 0;
     return fin_name;
+}
+int get_tree(int did, string &message, bool search_file)
+{
+    my_database p;
+    p.connect();
+    string dname;
+    sprintf(p.sql, "select dname from DirectoryEntity where id=%d", did);
+    if (p.execute() == -1)
+    {
+        message = "数据库查询错误";
+        return -500;
+    }
+    p.get();
+    if (p.result_vector.size() == 0)
+    {
+        message = "正在查询不存在的文件夹";
+        return -400;
+    }
+    int now;
+    vector<pair<int, string>> floor, next;
+    stack<int> dir_now;
+    stack<vector<pair<int, string>>> dir_tree;
+    floor.push_back(make_pair(did, dname));
+    dir_tree.push(floor);
+    dir_now.push(0);
+    vector<pair<int, string>>().swap(floor);
+    string data = "";
+    data += "[";
+    while (!dir_now.empty())
+    {
+        now = dir_now.top();
+        floor = dir_tree.top();
+        if (now == floor.size())
+        {
+            dir_now.pop();
+            dir_tree.pop();
+            if (dir_now.size() > 0)
+            {
+
+                if (search_file)
+                {
+
+                    now = dir_now.top() - 1;
+                    floor = dir_tree.top();
+                    sprintf(p.sql, "select FileDirectoryMap.id as id,FileDirectoryMap.fname as name,FileEntity.fsize as size\
+                 from FileDirectoryMap join FileEntity on FileEntity.id=FileDirectoryMap.fid where FileDirectoryMap.did=%d",
+                            floor[now].first);
+                    if (p.execute() == -1)
+                    {
+                        message = "数据库查询出错";
+                        return -500;
+                    }
+                    p.get();
+                    for (size_t i = 0; i < p.result_vector.size(); i++)
+                    {
+                        if (data[data.length() - 1] == '}')
+                        {
+                            data += ',';
+                        }
+                        data += "{\"id\":" + p.result_vector[i]["id"];
+                        data += ",\"name\":\"" + p.result_vector[i]["name"] + '\"';
+                        data += ",\"size\":" + p.result_vector[i]["size"];
+                        data += ",\"type\":0}";
+                    }
+                }
+                data += "]}";
+            }
+        }
+        else
+        {
+            if (now > 0)
+            {
+                data += ',';
+            }
+            data += "{\"label\":\"" + floor[now].second + "\",\"did\":" + to_string(floor[now].first);
+            data += ",\"isopen\":true,\"type\":1,\"children\":[";
+            dir_now.pop();
+            dir_now.push(now + 1);
+            sprintf(p.sql, "select id,dname from DirectoryEntity where parent_id=%d and id!=%d", floor[now].first, floor[now].first);
+            if (p.execute() == -1)
+            {
+                message = "数据库查询错误";
+                return -500;
+            }
+            p.get();
+            for (size_t i = 0; i < p.result_vector.size(); i++)
+            {
+                next.push_back(make_pair(atoi(p.result_vector[i]["id"].c_str()), p.result_vector[i]["dname"]));
+            }
+            dir_tree.push(next);
+            vector<pair<int, string>>().swap(next);
+            dir_now.push(0);
+        }
+    }
+    data += "]";
+    message = data;
+    return 0;
 }
