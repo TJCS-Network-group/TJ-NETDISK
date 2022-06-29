@@ -70,8 +70,14 @@ HttpResponse POST_upload_fragment(HttpRequest &req)
         string savePath = "../pool/" + fragment_md5;
         if (file_exists(savePath) == false && file_fragment_in_database)
             return make_response_json(500, "文件碎片池与数据库不一致！碎片池无该md5码而数据库有");
-        else if (file_exists(savePath) && file_fragment_in_database == false)
-            return make_response_json(500, "文件碎片池与数据库不一致！碎片池有该md5码而数据库没有");
+        else if (file_exists(savePath) && file_fragment_in_database == false) //碎片池有该md5码而数据库没有
+        {
+            sprintf(create_link.sql, "insert into FileFragmentEntity(MD5,fgsize,link_num) value(\"%s\",%d,%d)",
+                    fragment_md5.c_str(), file_fragment.size(), 0); // 0，后面统一执行++
+            // cout << create_link.sql << endl;
+            if (create_link.execute() == -1)
+                return make_response_json(500, "数据库插入出错,请联系管理员解决问题");
+        }
         else if (file_exists(savePath) == false && file_fragment_in_database == false) //看看pool和数据库中文件不存在
         {
             fstream myf_body(savePath, ios::out | ios::binary); //相对Main来说是上一级目录（要开机自启动可能要改成绝对路径）

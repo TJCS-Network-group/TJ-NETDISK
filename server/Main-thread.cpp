@@ -25,7 +25,7 @@ const int MAX_EPOLL_EVENT = 2048;
 const int MAX_EPOLL_SIZE = 204800;
 pthread_mutex_t mutex[MAX_EPOLL_SIZE] = {PTHREAD_MUTEX_INITIALIZER};
 pthread_t threads[MAX_EPOLL_SIZE];
-const int BUFFER_SIZE = 500000;
+const int BUFFER_SIZE = 20000;
 Routers routers; //路由表
 int epollfd;
 int setnonblocking(int sock)
@@ -77,6 +77,7 @@ void epoll_mod_out(void *data, const int length, const int socketfd, const bool 
 
     if (is_free)
     {
+        cout << "free over" << endl;
         free(data);
         data = NULL;
     }
@@ -305,6 +306,7 @@ int main()
                             tep->length = len;
                             tep->data = (char *)malloc(len);
                             memcpy(tep->data, buf, len);
+                            free(buf);
                             tep->sockfd = socketfd;
                             tep->recv_capacity = new_request.Get_request_len();
                             ev.data.ptr = (void *)tep; //从此不再是NULL
@@ -317,6 +319,7 @@ int main()
                         Myepoll_data *md = (Myepoll_data *)events[i].data.ptr; //取上次的
                         md->data = (char *)realloc((void *)md->data, md->length + len);
                         memcpy(md->data + md->length, buf, len);
+                        free(buf);
                         md->length += len;                   //更新length
                         if (md->recv_capacity == md->length) //上次的header都解析完了，这里等于就相当于读完了
                         {
@@ -367,11 +370,21 @@ int main()
                     else if (len < 0 && errno != EAGAIN)
                     {
                         cout << errno << ' ' << strerror(errno) << endl;
+                        md->clear();
+                        md->sockfd = socketfd;
+                        ev.data.ptr = (void *)md; //从send转到recv，可以复用上次的Myepoll_data *
+                        ev.events = EPOLLIN;
+                        epoll_ctl(epollfd, EPOLL_CTL_MOD, md->sockfd, &ev);
                     }
                 }
                 else
                 {
                     cout << errno << ' ' << strerror(errno) << endl;
+                    md->clear();
+                    md->sockfd = socketfd;
+                    ev.data.ptr = (void *)md; //从send转到recv，可以复用上次的Myepoll_data *
+                    ev.events = EPOLLIN;
+                    epoll_ctl(epollfd, EPOLL_CTL_MOD, md->sockfd, &ev);
                     // break;//还是保持服务吧，但是要警告维护人员了
                 }
                 if (md->length == md->send_length) //发完了

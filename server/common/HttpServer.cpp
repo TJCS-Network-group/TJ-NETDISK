@@ -45,7 +45,7 @@ HttpResponse make_response_json(int _statusCode, string _message, string _data, 
 ";
 
     HttpResponse resp;
-    resp.setHeader("Access-Control-Allow-Origin: http://121.37.159.103");
+    resp.setHeader("Access-Control-Allow-Origin: http://121.36.249.52");
     resp.setHeader("Access-Control-Allow-Headers: X-Requested-With,Content-Type");
     resp.setHeader("Access-Control-Allow-Methods: PUT,POST,GET,DELETE,OPTIONS");
     resp.setHeader("Access-Control-Allow-Credentials: true");
