@@ -26,9 +26,11 @@ const int MAX_EPOLL_EVENT = 2048;
 const int MAX_EPOLL_SIZE = 204800;
 pthread_mutex_t mutex[MAX_EPOLL_SIZE] = {PTHREAD_MUTEX_INITIALIZER};
 pthread_t threads[MAX_EPOLL_SIZE];
-const int BUFFER_SIZE = 4500000; //该项目中合法的包长度不可能超过这个
-Routers routers;                 //路由表
+const int BUFFER_SIZE = 20000; //该项目中合法的包长度不可能超过这个
+Routers routers;               //路由表
 int epollfd;
+epoll_event events[MAX_EPOLL_EVENT];
+
 int setnonblocking(int sock)
 {
     int opts;
@@ -105,6 +107,107 @@ int epoll_mod_out(const Routers &routers, const char *data, const int length, co
     ev.events = EPOLLOUT; // OUT
     return epoll_ctl(epollfd, EPOLL_CTL_MOD, socketfd, &ev);
 }
+
+void *epollinhandle(void *param)
+{
+    struct epoll_event ev;
+    epoll_event *event_ptr = (epoll_event *)param;
+    epoll_event event = *event_ptr;
+    Myepoll_data *current_ptr = (Myepoll_data *)(event.data.ptr);
+    int socketfd = current_ptr->sockfd;
+    pthread_mutex_lock(&mutex[socketfd]);
+
+    char *buf = (char *)malloc(BUFFER_SIZE); //接收传过来的http request请求，暂时用一百万字节存，可能不够大，要注意一下
+    cout << "EPOLLIN: " << socketfd << endl;
+    memset(buf, 0, BUFFER_SIZE);
+    int len = recv(socketfd, buf, BUFFER_SIZE, 0); //接受数据
+    if (len == 0)                                  // recv出来len=0, 对方断开
+    {
+        struct sockaddr_in clientAddr;
+        socklen_t clientAddrLen = sizeof(clientAddr);
+        char clientIP[INET_ADDRSTRLEN] = "";
+        getpeername(socketfd, (struct sockaddr *)&clientAddr, &clientAddrLen);
+        inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, INET_ADDRSTRLEN);
+        cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
+
+        current_ptr->clear();
+        free(current_ptr);
+
+        if (epoll_ctl(epollfd, EPOLL_CTL_DEL, socketfd, &event) == -1) //断开
+        {
+            cerr << "epoll_ctl: disconnect_sock" << endl;
+            // exit(EXIT_FAILURE);
+        }
+    }
+    else if (len > 0)
+    {
+        if (current_ptr->length == 0)
+        {
+            string client_http_request(buf, len);
+            //创建一个HttpRequest对象解析原报文
+            HttpRequest new_request(client_http_request);
+            if (new_request.Get_request_len() == len) //读完了
+                epoll_mod_out(routers, buf, len, socketfd, epollfd);
+            else
+            {
+                Myepoll_data *tep = (Myepoll_data *)malloc(sizeof(Myepoll_data));
+                tep->length = len;
+                tep->data = (char *)malloc(len);
+                memcpy(tep->data, buf, len);
+                tep->sockfd = socketfd;
+                tep->recv_capacity = new_request.Get_request_len();
+                ev.data.ptr = (void *)tep; //从此不再是NULL
+                ev.events = EPOLLIN;
+                epoll_ctl(epollfd, EPOLL_CTL_MOD, socketfd, &ev); //依然是read
+            }
+        }
+        else // recv追加新的内容
+        {
+            Myepoll_data *md = (Myepoll_data *)event.data.ptr; //取上次的
+            md->data = (char *)realloc((void *)md->data, md->length + len);
+            memcpy(md->data + md->length, buf, len);
+            md->length += len;                   //更新length
+            if (md->recv_capacity == md->length) //上次的header都解析完了，这里等于就相当于读完了
+            {
+                epoll_mod_out(routers, md->data, md->length, socketfd, epollfd);
+                md->clear();
+                free(md); //不再复用
+            }
+            else if (md->recv_capacity == -1) //上次的header都没解析完，这次收到了要再解析一次
+            {
+                string client_http_request(md->data, md->length);
+                //创建一个HttpRequest对象解析原报文
+                HttpRequest new_request(client_http_request);
+                md->recv_capacity = new_request.Get_request_len();
+                if (md->recv_capacity == len) //发现这次读完了
+                {
+                    epoll_mod_out(routers, md->data, md->length, socketfd, epollfd);
+                    md->clear();
+                    free(md); //不再复用
+                }
+                else
+                { //等待下次调度，继续读body/header即可
+                    ;
+                }
+            }
+            else //上次的header解析完了，但经过这一次发现body还没读完
+            {
+                //等待下次调度，继续读body即可
+                ;
+            }
+        }
+    }
+    else if (len < 0 && errno != EAGAIN)
+    {
+        cerr << "errno: " << errno << endl;
+        cerr << strerror(errno) << endl;
+        // break;//还是保持服务吧，但是要警告维护人员了
+    }
+    pthread_mutex_unlock(&mutex[socketfd]);
+    free(event_ptr);
+    pthread_exit(NULL);
+}
+
 int main()
 {
     routers.Init_routers(); //注册api接口
@@ -152,9 +255,7 @@ int main()
         exit(EXIT_FAILURE);
     }
     // 将监听的端口的socket对应的文件描述符添加到epoll事件列表中
-    struct epoll_event ev, events[MAX_EPOLL_EVENT];
-    memset(events, sizeof(events), 0);
-
+    epoll_event ev;
     ev.events = EPOLLIN;
     Myepoll_data ev_data;
     ev_data.sockfd = listenfd;
@@ -166,7 +267,6 @@ int main()
         cerr << "Error: epoll_create" << endl;
         exit(EXIT_FAILURE);
     }
-
     for (;;)
     {
         //判断cookie超时，disconnect之后要从session中删掉
@@ -185,6 +285,8 @@ int main()
         {
             Myepoll_data *current_ptr = (Myepoll_data *)(events[i].data.ptr);
             int socketfd = current_ptr->sockfd;
+            pthread_mutex_lock(&mutex[socketfd]);
+
             if (socketfd == listenfd) //有新的连接
             {
                 // accept建立新的连接
@@ -203,10 +305,12 @@ int main()
                 if (setnonblocking(conn) == -1)
                     continue; //设为非阻塞
 
-                ev.events = EPOLLIN;
                 Myepoll_data *tep = (Myepoll_data *)malloc(sizeof(Myepoll_data));
                 tep->init();
                 tep->sockfd = conn; // socket文件描述符
+
+                epoll_event ev;
+                ev.events = EPOLLIN;
                 ev.data.ptr = (void *)tep;
                 // 将该文件描述符添加到epoll事件监听的列表中，使用ET模式
                 if (epoll_ctl(epollfd, EPOLL_CTL_ADD, conn, &ev) == -1)
@@ -218,92 +322,14 @@ int main()
             }
             else if (events[i].events & EPOLLIN) //读新数据
             {
-                char *buf = (char *)malloc(BUFFER_SIZE); //接收传过来的http request请求，暂时用一百万字节存，可能不够大，要注意一下
-                cout << "EPOLLIN: " << socketfd << endl;
-                memset(buf, 0, BUFFER_SIZE);
-                int len = recv(socketfd, buf, BUFFER_SIZE, 0); //接受数据
-                if (len == 0)                                  // recv出来len=0, 对方断开
+                epoll_event *tep_ev = (epoll_event *)malloc(sizeof(epoll_event));
+                memcpy(tep_ev, &events[i], sizeof(epoll_event));
+                pthread_attr_t a;                                         //线程属性
+                pthread_attr_init(&a);                                    //初始化线程属性
+                pthread_attr_setdetachstate(&a, PTHREAD_CREATE_DETACHED); //设置线程属性
+                if (pthread_create(&threads[socketfd], &a, epollinhandle, (void *)tep_ev) != 0)
                 {
-                    struct sockaddr_in clientAddr;
-                    socklen_t clientAddrLen = sizeof(clientAddr);
-                    char clientIP[INET_ADDRSTRLEN] = "";
-                    getpeername(socketfd, (struct sockaddr *)&clientAddr, &clientAddrLen);
-                    inet_ntop(AF_INET, &clientAddr.sin_addr, clientIP, INET_ADDRSTRLEN);
-                    cout << "disconnect " << clientIP << ":" << ntohs(clientAddr.sin_port) << endl;
-
-                    current_ptr->clear();
-                    free(current_ptr);
-
-                    if (epoll_ctl(epollfd, EPOLL_CTL_DEL, socketfd, &events[i]) == -1) //断开
-                    {
-                        cerr << "epoll_ctl: disconnect_sock" << endl;
-                        continue;
-                        // exit(EXIT_FAILURE);
-                    }
-                }
-                if (len > 0)
-                {
-                    if (current_ptr->length == 0)
-                    {
-                        string client_http_request(buf, len);
-                        //创建一个HttpRequest对象解析原报文
-                        HttpRequest new_request(client_http_request);
-                        if (new_request.Get_request_len() == len) //读完了
-                            epoll_mod_out(routers, buf, len, socketfd, epollfd);
-                        else
-                        {
-                            Myepoll_data *tep = (Myepoll_data *)malloc(sizeof(Myepoll_data));
-                            tep->length = len;
-                            tep->data = (char *)malloc(len);
-                            memcpy(tep->data, buf, len);
-                            tep->sockfd = socketfd;
-                            tep->recv_capacity = new_request.Get_request_len();
-                            ev.data.ptr = (void *)tep; //从此不再是NULL
-                            ev.events = EPOLLIN;
-                            epoll_ctl(epollfd, EPOLL_CTL_MOD, socketfd, &ev); //依然是read
-                        }
-                    }
-                    else // recv追加新的内容
-                    {
-                        Myepoll_data *md = (Myepoll_data *)events[i].data.ptr; //取上次的
-                        md->data = (char *)realloc((void *)md->data, md->length + len);
-                        memcpy(md->data + md->length, buf, len);
-                        md->length += len;                   //更新length
-                        if (md->recv_capacity == md->length) //上次的header都解析完了，这里等于就相当于读完了
-                        {
-                            epoll_mod_out(routers, md->data, md->length, socketfd, epollfd);
-                            md->clear();
-                            free(md); //不再复用
-                        }
-                        else if (md->recv_capacity == -1) //上次的header都没解析完，这次收到了要再解析一次
-                        {
-                            string client_http_request(md->data, md->length);
-                            //创建一个HttpRequest对象解析原报文
-                            HttpRequest new_request(client_http_request);
-                            md->recv_capacity = new_request.Get_request_len();
-                            if (md->recv_capacity == len) //发现这次读完了
-                            {
-                                epoll_mod_out(routers, md->data, md->length, socketfd, epollfd);
-                                md->clear();
-                                free(md); //不再复用
-                            }
-                            else
-                            { //等待下次调度，继续读body/header即可
-                                ;
-                            }
-                        }
-                        else //上次的header解析完了，但经过这一次发现body还没读完
-                        {
-                            //等待下次调度，继续读body即可
-                            ;
-                        }
-                    }
-                }
-                if (len < 0 && errno != EAGAIN)
-                {
-                    cerr << "errno: " << errno << endl;
-                    cerr << strerror(errno) << endl;
-                    // break;//还是保持服务吧，但是要警告维护人员了
+                    cerr << "Error: pthread_create" << endl;
                 }
             }
             else if (events[i].events & EPOLLOUT)
@@ -334,11 +360,13 @@ int main()
                 {
                     md->clear();
                     md->sockfd = socketfd;
+                    epoll_event ev;
                     ev.data.ptr = (void *)md; //从send转到recv，可以复用上次的Myepoll_data *
                     ev.events = EPOLLIN;
                     epoll_ctl(epollfd, EPOLL_CTL_MOD, md->sockfd, &ev);
                 }
             }
+            pthread_mutex_unlock(&mutex[socketfd]);
         }
     }
 
