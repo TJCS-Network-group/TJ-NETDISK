@@ -263,7 +263,15 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         }
         else
         {
-            data += "{\"next_index\":-1}";
+            sprintf(p.sql, "select count(*) as num from FileFragmentMap join FileEntity on FileEntity.id=FileFragmentMap.fid\
+             where FileEntity.MD5=\"%s\"",
+                    md5.c_str());
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询错误");
+            }
+            p.get();
+            data += "{\"next_index\":-1,\"num\":" + p.result_vector[0]["num"] + '}';
             return make_response_json(200, "需要的下一块为", data);
         }
     }
