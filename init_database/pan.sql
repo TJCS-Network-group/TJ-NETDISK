@@ -54,7 +54,6 @@ create table UserLogin(
     `login_ip` varchar(100) NOT NULL,
     `login_time` TIMESTAMP NOT NULL default current_timestamp on update current_timestamp
 );
-
 insert into DirectoryEntity(id,dname,parent_id) value (1, 'root', 1);
 insert into DirectoryEntity(id,dname,parent_id) value (2, 'root', 2);
 insert into DirectoryEntity(id,dname,parent_id) value (3, 'root', 3);
