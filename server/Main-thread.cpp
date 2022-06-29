@@ -77,7 +77,7 @@ void epoll_mod_out(void *data, const int length, const int socketfd, const bool 
 
     if (is_free)
     {
-        cout << "free over" << endl;
+        // cout << "free over" << endl;
         free(data);
         data = NULL;
     }
@@ -265,8 +265,8 @@ int main()
                 }
                 else if (events[i].events & EPOLLIN) //读新数据
                 {
-                    cout << "EPOLLIN: " << socketfd << endl;
-                    // memset(buf, 0, BUFFER_SIZE);
+                    // cout << "EPOLLIN: " << socketfd << endl;
+                    //  memset(buf, 0, BUFFER_SIZE);
                     char *buf = (char *)malloc(BUFFER_SIZE);       //接收传过来的http request请求
                     int len = recv(socketfd, buf, BUFFER_SIZE, 0); //接受数据
                     if (len == 0)                                  // recv出来len=0, 对方断开
@@ -359,7 +359,7 @@ int main()
                 }
                 else if (events[i].events & EPOLLOUT)
                 {
-                    cout << "EPOLLOUT: " << socketfd << endl;
+                    // cout << "EPOLLOUT: " << socketfd << endl;
                     Myepoll_data *md = (Myepoll_data *)events[i].data.ptr;
                     if (md->length > md->send_length)
                     {
@@ -402,6 +402,8 @@ int main()
         }
         catch (const char *&e)
         {
+            cout << "errno: " << errno << endl
+                 << strerror(errno) << endl;
             cout << e << endl;
         }
     }
