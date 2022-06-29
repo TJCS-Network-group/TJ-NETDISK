@@ -39,14 +39,17 @@ for j in range(1, 4):
 
 sql = "insert into DirectoryEntity(dname,parent_id) value {};".format(
     ("book", 1))
+print(sql)
 db_cursor.execute(sql)
 db.commit()
 sql = "insert into DirectoryEntity(dname,parent_id) value {};".format(
     ("test", 4))
+print(sql)
 db_cursor.execute(sql)
 db.commit()
 sql = "insert into DirectoryEntity(dname,parent_id) value {};".format(
     ("test", 2))
+print(sql)
 db_cursor.execute(sql)
 db.commit()
 
@@ -60,6 +63,7 @@ for j in range(1, 4):
     sql = "insert into UserEntity(user_name,password_hash,root_dir_id) value {};".format(
         (users[j - 1], hashlib.md5(passwds[j - 1].encode("gbk")).hexdigest(),
          4 - j))
+    print(sql)
     db_cursor.execute(sql)
     db.commit()
 
@@ -68,6 +72,7 @@ with open("test.pdf", "rb") as f:
     fsize = f.tell()#当前文件指针位置
     sql = "insert into FileEntity(MD5,fsize,link_num,next_index,is_complete) value {}".\
         format((f_md5,fsize,2,-1,True))
+    print(sql)
     db_cursor.execute(sql)
     db.commit()
     f.seek(0, 0)#回开头
@@ -78,7 +83,7 @@ with open("test.pdf", "rb") as f:
         fg_md5 = hashlib.md5(tmp).hexdigest()
         sql = "insert into FileFragmentEntity(MD5,fgsize,link_num) value {};".\
             format((fg_md5,fgsize,1))
-
+        print(sql)
         db_cursor.execute(sql)
         db.commit()
         sql = "insert into FileFragmentMap(fid,`index`,fgid) value {};".\
@@ -91,9 +96,11 @@ with open("test.pdf", "rb") as f:
         num += 1
     sql = "insert into FileDirectoryMap(fid,did,fname) value {}".\
         format((1,6,"test.pdf"))
+    print(sql)
     db_cursor.execute(sql)
     db.commit()
     sql = "insert into FileDirectoryMap(fid,did,fname) value {}".\
         format((1,5,"book.pdf"))
+    print(sql)
     db_cursor.execute(sql)
     db.commit()
