@@ -444,7 +444,7 @@ HttpResponse POST_share_copy_dir(HttpRequest &req)
             }
             p.get();
             new_insert.push(atoi(p.result_vector[0]["id"].c_str()));
-            sprintf(p.sql, "select id from DirectoryEntity where parent_id=%d and id!=%d", floor[now], floor[now]);
+            sprintf(p.sql, "select id from DirectoryEntity where parent_id=%d and id!=%d order by dname", floor[now], floor[now]);
             if (p.execute() == -1)
             {
                 return make_response_json(500, "数据库查询错误");
@@ -457,7 +457,7 @@ HttpResponse POST_share_copy_dir(HttpRequest &req)
             dir_tree.push(next);
             vector<int>().swap(next);
             dir_now.push(0);
-            sprintf(p.sql, "select fid,fname from FileDirectoryMap where did=%d", floor[now]);
+            sprintf(p.sql, "select fid,fname from FileDirectoryMap where did=%d order by fname", floor[now]);
             if (p.execute() == -1)
             {
                 return make_response_json(500, "数据库查询错误");
