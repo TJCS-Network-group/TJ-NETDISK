@@ -227,6 +227,7 @@ void HttpRequest::Parse_request_body()
             size_t pos = type.find("application/json");
             if (pos != type.npos)
             { //找到了子串"application/json"，是json
+                // cout << "body:" << body << endl;
                 json = JSON(body);
                 // cout << "JSON:\n"
                 //      << json << endl;
@@ -294,8 +295,7 @@ void HttpRequest::Parse_request_body()
                                     size_t value_len = content.length() - begin_pos - 2; //最后还有一个\r\n
                                     string value = content.substr(begin_pos, value_len);
                                     form_data[To_gbk(key)] = value;
-                                    cout << To_gbk(key) << "file size: " << value.size() << endl;
-
+                                    /*cout << To_gbk(key) << "file size: " << value.size() << endl;
                                     fstream myf_body("./request_file/" + filename, ios::out | ios::binary);
                                     if (myf_body.good())
                                     {
@@ -305,7 +305,8 @@ void HttpRequest::Parse_request_body()
                                     {
                                         cout << "Can't open file!" << endl;
                                     }
-                                    myf_body.close();
+                                    myf_body.close();*/
+                                    break;
                                 }
                             }
                         }
