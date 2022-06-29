@@ -429,7 +429,7 @@ int get_tree(int did, string &message, bool search_file)
                     now = dir_now.top() - 1;
                     floor = dir_tree.top();
                     sprintf(p.sql, "select FileDirectoryMap.id as id,FileDirectoryMap.fname as name,FileEntity.fsize as size\
-                 from FileDirectoryMap join FileEntity on FileEntity.id=FileDirectoryMap.fid where FileDirectoryMap.did=%d",
+                 from FileDirectoryMap join FileEntity on FileEntity.id=FileDirectoryMap.fid where FileDirectoryMap.did=%d order by name",
                             floor[now].first);
                     if (p.execute() == -1)
                     {
@@ -462,7 +462,7 @@ int get_tree(int did, string &message, bool search_file)
             data += ",\"isopen\":true,\"type\":1,\"children\":[";
             dir_now.pop();
             dir_now.push(now + 1);
-            sprintf(p.sql, "select id,dname from DirectoryEntity where parent_id=%d and id!=%d", floor[now].first, floor[now].first);
+            sprintf(p.sql, "select id,dname from DirectoryEntity where parent_id=%d and id!=%d order by dname", floor[now].first, floor[now].first);
             if (p.execute() == -1)
             {
                 message = "Êý¾Ý¿â²éÑ¯´íÎó";
