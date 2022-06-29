@@ -265,7 +265,7 @@ void HttpRequest::Parse_request_body()
                         if (next_pos == body.npos)
                             break;
                         string content = body.substr(pos, next_pos - pos);
-                        {
+                        /*{
                             fstream myf_body("./request_file/content.txt", ios::out | ios::binary);
                             if (myf_body.good())
                             {
@@ -276,7 +276,7 @@ void HttpRequest::Parse_request_body()
                                 cout << "Can't open file!" << endl;
                             }
                             myf_body.close();
-                        }
+                        }*/
                         size_t line_1_pos = content.find("\r\n");
                         string content_line_1 = content.substr(0, line_1_pos);
 
