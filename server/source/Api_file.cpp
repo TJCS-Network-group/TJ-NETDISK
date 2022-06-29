@@ -178,7 +178,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         {
             return make_response_json(500, "数据库新建错误,请联系管理员解决问题");
         }
-        data += "{\"next_index\":0}";
+        data += "{\"next_index\":0,\"num\":0}";
         return make_response_json(200, "需要的下一块为", data);
     }
     else if (p.result_vector.size() == 1)
@@ -210,6 +210,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
                 return make_response_json(500, "数据库查询失败,请联系管理员解决问题");
             }
             p.get();
+            int num = p.result_vector.size();
             for (size_t i = 0; i < p.result_vector.size(); i++)
             {
                 // cout << "has index:" << atoi(p.result_vector[i]["index"].c_str()) << endl;
@@ -232,7 +233,7 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
                 now_index = next_index;
                 next_index = -1;
             }
-            data += "{\"next_index\":" + to_string(now_index) + '}';
+            data += "{\"next_index\":" + to_string(now_index) + ",\"num\":" + to_string(num) + '}';
             for (auto it = indexs.begin(); it != indexs.end(); it++)
             {
                 if (*it > now_index)
@@ -262,7 +263,15 @@ HttpResponse GET_upload_allocation(HttpRequest &req)
         }
         else
         {
-            data += "{\"next_index\":-1}";
+            sprintf(p.sql, "select count(*) as num from FileFragmentMap join FileEntity on FileEntity.id=FileFragmentMap.fid\
+             where FileEntity.MD5=\"%s\"",
+                    md5.c_str());
+            if (p.execute() == -1)
+            {
+                return make_response_json(500, "数据库查询错误");
+            }
+            p.get();
+            data += "{\"next_index\":-1,\"num\":" + p.result_vector[0]["num"] + '}';
             return make_response_json(200, "需要的下一块为", data);
         }
     }

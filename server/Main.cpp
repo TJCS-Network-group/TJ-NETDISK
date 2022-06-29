@@ -216,6 +216,7 @@ int main()
             }
             else if (events[i].events & EPOLLIN) //读新数据
             {
+                cout << "EPOLLIN: " << socketfd << endl;
                 memset(buf, 0, BUFFER_SIZE);
                 int len = recv(socketfd, buf, BUFFER_SIZE, 0); //接受数据
                 if (len == 0)                                  // recv出来len=0, 对方断开
@@ -244,9 +245,6 @@ int main()
                         string client_http_request(buf, len);
                         //创建一个HttpRequest对象解析原报文
                         HttpRequest new_request(client_http_request);
-                        cout << "第一次" << endl;
-                        cout << "len: " << len << endl;
-                        cout << "parse len: " << new_request.Get_request_len() << endl;
                         if (new_request.Get_request_len() == len) //读完了
                             epoll_mod_out(routers, buf, len, socketfd, epollfd);
                         else
@@ -307,6 +305,7 @@ int main()
             }
             else if (events[i].events & EPOLLOUT)
             {
+                cout << "EPOLLOUT: " << socketfd << endl;
                 Myepoll_data *md = (Myepoll_data *)events[i].data.ptr;
                 if (md->length > md->send_length)
                 {
