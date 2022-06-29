@@ -251,10 +251,18 @@ HttpResponse POST_filesystem_create_dir(HttpRequest &req)
     {
         return make_response_json(500, "数据库插入出错,请联系管理员检查");
     }
+    sprintf(p.sql, "select LAST_INSERT_ID() as id");
+    if (p.execute() == -1)
+    {
+        return make_response_json(500, "数据库插入出错,请联系管理员检查");
+    }
+    p.get();
+    string mdata;
+    mdata = "{\"did\":" + p.result_vector[0]["id"] + "}";
     set<string>().swap(names);
     p.disconnect();
     message = "新建文件夹成功,新文件夹名为" + fin_name;
-    return make_response_json(200, message);
+    return make_response_json(200, message, mdata);
 }
 HttpResponse POST_share_move_dir(HttpRequest &req)
 {
