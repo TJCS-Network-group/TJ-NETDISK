@@ -27,7 +27,7 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
     {
         return make_response_json(200, "该目录无文件", "[]");
     }
-    sprintf(p.sql, "select id,dname as name,last_change_time from DirectoryEntity where parent_id=%d and id!=%d", dir_id, dir_id);
+    sprintf(p.sql, "select id,dname as name,last_change_time from DirectoryEntity where parent_id=%d and id!=%d order by name", dir_id, dir_id);
     if (p.execute() == -1)
     {
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
@@ -44,7 +44,7 @@ HttpResponse GET_filesystem_get_dir(HttpRequest &req)
         data.push_back(d);
     }
     sprintf(p.sql, "select FileDirectoryMap.id as id,FileDirectoryMap.fname as name,FileEntity.fsize as fsize,FileDirectoryMap.last_change_time as last_change_time\
-     from FileDirectoryMap join FileEntity on FileEntity.id=FileDirectoryMap.fid where FileDirectoryMap.did=%d",
+     from FileDirectoryMap join FileEntity on FileEntity.id=FileDirectoryMap.fid where FileDirectoryMap.did=%d order by name",
             dir_id);
     if (p.execute() == -1)
     {
