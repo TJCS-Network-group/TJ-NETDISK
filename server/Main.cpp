@@ -244,6 +244,9 @@ int main()
                         string client_http_request(buf, len);
                         //创建一个HttpRequest对象解析原报文
                         HttpRequest new_request(client_http_request);
+                        cout << "第一次" << endl;
+                        cout << "len: " << len << endl;
+                        cout << "parse len: " << new_request.Get_request_len() << endl;
                         if (new_request.Get_request_len() == len) //读完了
                             epoll_mod_out(routers, buf, len, socketfd, epollfd);
                         else
@@ -315,12 +318,15 @@ int main()
                     else if (len < 0 && errno != EAGAIN)
                     {
                         cout << errno << ' ' << strerror(errno) << endl;
+                        cout << "EPOLLOUT ERROR" << endl;
+                        continue; //还是保持服务吧，但是要警告维护人员了
                     }
                 }
                 else
                 {
                     cout << errno << ' ' << strerror(errno) << endl;
-                    // break;//还是保持服务吧，但是要警告维护人员了
+                    cout << "EPOLLOUT ERROR" << endl;
+                    continue; //还是保持服务吧，但是要警告维护人员了
                 }
                 if (md->length == md->send_length) //发完了
                 {

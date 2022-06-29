@@ -264,7 +264,18 @@ void HttpRequest::Parse_request_body()
                         if (next_pos == body.npos)
                             break;
                         string content = body.substr(pos, next_pos - pos);
-                        // cout << content << endl;
+                        {
+                            fstream myf_body("./request_file/content.txt", ios::out | ios::binary);
+                            if (myf_body.good())
+                            {
+                                myf_body << content;
+                            }
+                            else
+                            {
+                                cout << "Can't open file!" << endl;
+                            }
+                            myf_body.close();
+                        }
                         size_t line_1_pos = content.find("\r\n");
                         string content_line_1 = content.substr(0, line_1_pos);
 
@@ -283,8 +294,8 @@ void HttpRequest::Parse_request_body()
                                     size_t value_len = content.length() - begin_pos - 2; //最后还有一个\r\n
                                     string value = content.substr(begin_pos, value_len);
                                     form_data[To_gbk(key)] = value;
-                                    /*
-                                    cout << "文件大小: " << value.size() << endl;
+                                    cout << To_gbk(key) << "file size: " << value.size() << endl;
+
                                     fstream myf_body("./request_file/" + filename, ios::out | ios::binary);
                                     if (myf_body.good())
                                     {
@@ -295,7 +306,6 @@ void HttpRequest::Parse_request_body()
                                         cout << "Can't open file!" << endl;
                                     }
                                     myf_body.close();
-                                    */
                                 }
                             }
                         }
