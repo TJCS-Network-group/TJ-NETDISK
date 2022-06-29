@@ -135,7 +135,7 @@ void *Epoll_mod_out_thread(void *param)
 }
 void My_epoll_create_thread(char *data, const int length, const int socketfd, const bool isfree)
 {
-    cout << "尝试创建线程: " << socketfd << endl;
+    // cout << "尝试创建线程: " << socketfd << endl;
     ThreadArg *param = (ThreadArg *)malloc(sizeof(ThreadArg));
     param->data = (void *)data;
     param->length = length;
@@ -209,7 +209,7 @@ int main()
         cerr << "Error: epoll_create" << endl;
         exit(EXIT_FAILURE);
     }
-
+    char buf[BUFFER_SIZE];
     for (;;)
     {
         //判断cookie超时，disconnect之后要从session中删掉
@@ -263,9 +263,9 @@ int main()
             }
             else if (events[i].events & EPOLLIN) //读新数据
             {
-                cout << "EPOLLIN: " << socketfd << endl;
-                // memset(buf, 0, BUFFER_SIZE);
-                char *buf = (char *)malloc(BUFFER_SIZE);       //接收传过来的http request请求
+                // cout << "EPOLLIN: " << socketfd << endl;
+                //  memset(buf, 0, BUFFER_SIZE);
+                // char *buf = (char *)malloc(BUFFER_SIZE);       //接收传过来的http request请求
                 int len = recv(socketfd, buf, BUFFER_SIZE, 0); //接受数据
                 if (len == 0)                                  // recv出来len=0, 对方断开
                 {
@@ -296,8 +296,8 @@ int main()
 
                         if (new_request.Get_request_len() == len) //读完了
                         {
-                            My_epoll_create_thread(buf, len, socketfd, true);
-                            cout << "创建线程成功: " << socketfd << endl;
+                            My_epoll_create_thread(buf, len, socketfd, false);
+                            // cout << "创建线程成功: " << socketfd << endl;
                         }
                         else
                         {
@@ -355,7 +355,7 @@ int main()
             }
             else if (events[i].events & EPOLLOUT)
             {
-                cout << "EPOLLOUT: " << socketfd << endl;
+                // cout << "EPOLLOUT: " << socketfd << endl;
                 Myepoll_data *md = (Myepoll_data *)events[i].data.ptr;
                 if (md->length > md->send_length)
                 {

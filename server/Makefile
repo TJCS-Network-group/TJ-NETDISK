@@ -1,6 +1,9 @@
 src = Main.cpp
 obj = Main.o
 target = Main
+#src = Main-thread.cpp
+#obj = Main-thread.o
+#target = Main-thread
 select = -std=c++11 -Wall -g -O2 -lmysqlclient -lpthread
 common_src_path = $(wildcard ./common/*.cpp)
 common_obj_path=$(patsubst %.cpp, %.o, $(common_src_path))
