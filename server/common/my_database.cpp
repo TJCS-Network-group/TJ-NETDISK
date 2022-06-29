@@ -401,6 +401,7 @@ int get_tree(int did, string &message, bool search_file)
         message = "正在查询不存在的文件夹";
         return -400;
     }
+    dname = p.result_vector[0]["dname"];
     int now;
     vector<pair<int, string>> floor, next;
     stack<int> dir_now;

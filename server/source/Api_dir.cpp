@@ -587,13 +587,22 @@ HttpResponse GET_filesystem_get_tree(HttpRequest &req)
     {
         return make_response_json(400, "请求格式不对");
     }
-    dir_id = atoi(req.params["dir_id"].c_str());
+    dir_id = atoi(req.params["did"].c_str());
     int check;
     string message;
     int current_root_id = get_root_id_by_user(req.current_user_id, message);
     if (current_root_id < 0)
     {
         return make_response_json(-current_root_id, message);
+    }
+    check = is_child(dir_id, current_root_id, message);
+    if (check < 0)
+    {
+        return make_response_json(-check, message);
+    }
+    if (!check && dir_id != current_root_id)
+    {
+        return make_response_json(400, "用户无权查看他人目录");
     }
     check = get_tree(dir_id, message, true);
     if (check < 0)
