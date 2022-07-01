@@ -66,7 +66,5 @@ HttpResponse Routers::getResponse(HttpRequest &req) const
             return iter.second(req); //传入request；传出response
         }
     }
-    cout << req.method << endl;
-    cout << req.route << endl;
-    return make_response_json(404); //没找到
+    return make_response_json(404, "路由表中未找到该路由"); //没找到
 }
