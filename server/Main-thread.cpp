@@ -25,8 +25,10 @@ int MAX_EPOLL_EVENT = 2048;
 int MAX_EPOLL_SIZE = 204800;
 int BUFFER_SIZE = 20000;
 
-pthread_mutex_t *mutex;
-pthread_t *threads;
+// pthread_mutex_t *mutex;
+// pthread_t *threads;
+pthread_mutex_t mutex[300000];
+pthread_t threads[300000];
 
 Routers routers; //路由表
 int epollfd;
@@ -188,10 +190,10 @@ int init_config(const string config_path)
     cout << "MAX_EPOLL_SIZE: " << MAX_EPOLL_SIZE << endl;
     cout << "BUFFER_SIZE: " << BUFFER_SIZE << endl;
     cout << "PORT: " << PORT << endl;
-    mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t) * MAX_EPOLL_EVENT);
-    memset(mutex, 0, sizeof(pthread_mutex_t) * MAX_EPOLL_EVENT);
-    threads = (pthread_t *)malloc(sizeof(pthread_t) * MAX_EPOLL_EVENT);
-    memset(threads, 0, sizeof(pthread_t) * MAX_EPOLL_EVENT);
+    // mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t) * MAX_EPOLL_EVENT);
+    // memset(mutex, 0, sizeof(pthread_mutex_t) * MAX_EPOLL_EVENT);
+    // threads = (pthread_t *)malloc(sizeof(pthread_t) * MAX_EPOLL_EVENT);
+    // memset(threads, 0, sizeof(pthread_t) * MAX_EPOLL_EVENT);
     return 0;
 }
 
@@ -345,7 +347,7 @@ int main()
 
                         if (new_request.Get_request_len() == len) //读完了
                         {
-                            My_epoll_create_thread(buf, len, socketfd, false);
+                            My_epoll_create_thread(buf, len, socketfd, true);
                             // cout << "创建线程成功: " << socketfd << endl;
                         }
                         else
@@ -354,7 +356,8 @@ int main()
                             tep->length = len;
                             tep->data = (char *)malloc(len);
                             memcpy(tep->data, buf, len);
-                            // free(buf);
+                            free(buf);
+                            buf = NULL;
                             tep->sockfd = socketfd;
                             tep->recv_capacity = new_request.Get_request_len();
                             ev.data.ptr = (void *)tep; //从此不再是NULL
@@ -367,7 +370,8 @@ int main()
                         Myepoll_data *md = (Myepoll_data *)events[i].data.ptr; //取上次的
                         md->data = (char *)realloc((void *)md->data, md->length + len);
                         memcpy(md->data + md->length, buf, len);
-                        // free(buf);
+                        free(buf);
+                        buf = NULL;
                         md->length += len;                   //更新length
                         if (md->recv_capacity == md->length) //上次的header都解析完了，这里等于就相当于读完了
                         {
@@ -399,12 +403,17 @@ int main()
                 }
                 else if (len < 0 && errno != EAGAIN)
                 {
+                    free(buf); //回收内存
+                    buf = NULL;
                     cerr << "errno: " << errno << endl;
                     cerr << strerror(errno) << endl;
                     // break;//还是保持服务吧，但是要警告维护人员了
                 }
-                free(buf); //回收内存
-                buf = NULL;
+                else
+                {
+                    free(buf); //回收内存
+                    buf = NULL;
+                }
             }
             else if (events[i].events & EPOLLOUT)
             {
