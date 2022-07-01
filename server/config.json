@@ -1,0 +1,8 @@
+{
+    "MAX_LISTEN_QUEUE": 100,
+    "PORT": 7777,
+    "MAX_EPOLL_EVENT": 2048,
+    "MAX_EPOLL_SIZE": 204800,
+    "BUFFER_SIZE": 20000,
+    "IP": "121.36.249.52"
+}

@@ -69,10 +69,10 @@ HttpResponse GET_download_fragment(HttpRequest &req)
 
     if (FileToStr(file_path, file_value) == -1)
         return make_response_json(500, "pool中找不到文件");
-    HttpResponse resp;
+    HttpResponse resp;                                                   //跨域
     resp.setHeader("Content-Type: application/octet-stream");            //直接传输二进制
     resp.setHeader("Content-Length: " + to_string(file_value.length())); //长度
-    resp.setHeader("Access-Control-Allow-Origin: http://121.36.249.52");
+    resp.setHeader("Access-Control-Allow-Origin: http://" + IP);
     resp.setHeader("Access-Control-Allow-Headers: X-Requested-With,Content-Type");
     resp.setHeader("Access-Control-Allow-Methods: PUT,POST,GET,DELETE,OPTIONS");
     resp.setHeader("Access-Control-Allow-Credentials: true");

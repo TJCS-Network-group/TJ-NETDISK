@@ -27,6 +27,7 @@ public:
     void Init_routers();
 };
 HttpResponse make_response_json(int _statusCode = 200, std::string _message = "", std::string _data = "{}", bool _success = true);
+extern std::string IP;
 
 //要实现的API函数
 HttpResponse POST_login(HttpRequest &req);
