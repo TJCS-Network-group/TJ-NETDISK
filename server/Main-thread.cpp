@@ -25,10 +25,8 @@ int MAX_EPOLL_EVENT = 2048;
 int MAX_EPOLL_SIZE = 204800;
 int BUFFER_SIZE = 20000;
 
-// pthread_mutex_t *mutex;
-// pthread_t *threads;
-pthread_mutex_t mutex[300000];
-pthread_t threads[300000];
+pthread_mutex_t *mutex;
+pthread_t *threads;
 
 Routers routers; //Â·ÓÉ±í
 int epollfd;
@@ -190,10 +188,10 @@ int init_config(const string config_path)
     cout << "MAX_EPOLL_SIZE: " << MAX_EPOLL_SIZE << endl;
     cout << "BUFFER_SIZE: " << BUFFER_SIZE << endl;
     cout << "PORT: " << PORT << endl;
-    // mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t) * MAX_EPOLL_EVENT);
-    // memset(mutex, 0, sizeof(pthread_mutex_t) * MAX_EPOLL_EVENT);
-    // threads = (pthread_t *)malloc(sizeof(pthread_t) * MAX_EPOLL_EVENT);
-    // memset(threads, 0, sizeof(pthread_t) * MAX_EPOLL_EVENT);
+    mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t) * MAX_EPOLL_EVENT);
+    memset(mutex, 0, sizeof(pthread_mutex_t) * MAX_EPOLL_EVENT);
+    threads = (pthread_t *)malloc(sizeof(pthread_t) * MAX_EPOLL_EVENT);
+    memset(threads, 0, sizeof(pthread_t) * MAX_EPOLL_EVENT);
     return 0;
 }
 
