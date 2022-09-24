@@ -1,20 +1,29 @@
-#include <mysql/mysql.h> // mysql特有
-#include <map>
-#include <set>
 #include <cstdio>
-#include <vector>
+#include <map>
+#include <mysql/mysql.h> // mysql特有
+#include <set>
 #include <string>
+#include <vector>
 using namespace std;
+struct database_variable
+{
+    string host;
+    string user;
+    string passwd;
+    string db;
+};
+
+extern database_variable my_database_variable;
 class my_database
 {
 protected:
     MYSQL *mysql;
     MYSQL_RES *result;
     MYSQL_ROW row;
-    static const char *host;
-    static const char *user;
-    static const char *passwd;
-    static const char *db;
+    string host;
+    string user;
+    string passwd;
+    string db;
     static const unsigned int port;
     static const char *unix_socket;
     static const unsigned long clientflag;

@@ -1,21 +1,22 @@
 #include "../include/my_database.h"
 #include "../include/HttpTool.h"
-#include <iostream> // cin,cout等
-#include <iomanip>  // setw等
 #include <cstdlib>
+#include <iomanip>  // setw等
+#include <iostream> // cin,cout等
 #include <stack>
 using namespace std;
-const char *my_database::host = "localhost";
 
-const char *my_database::user = "root";
-const char *my_database::passwd = "root123";
-const char *my_database::db = "pan";
+database_variable my_database_variable;
 const unsigned int my_database::port = 0;
 const char *my_database::unix_socket = nullptr;
 const unsigned long my_database::clientflag = 0;
 const char *my_database::character_set_name = "gbk";
 my_database::my_database()
 {
+    host = my_database_variable.host;
+    user = my_database_variable.user;
+    passwd = my_database_variable.passwd;
+    db = my_database_variable.db;
     mysql = nullptr;
     result = nullptr;
     row = nullptr;
@@ -44,7 +45,7 @@ void my_database::connect()
             exit(-1);
         }
     }
-    if (mysql_real_connect(mysql, host, user, passwd, db, port, unix_socket, clientflag) == nullptr)
+    if (mysql_real_connect(mysql, host.c_str(), user.c_str(), passwd.c_str(), db.c_str(), port, unix_socket, clientflag) == nullptr)
     {
         cout << "mysql_real_connect failed(" << mysql_error(mysql) << ")" << endl;
         exit(-1);

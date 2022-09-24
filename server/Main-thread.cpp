@@ -1,4 +1,5 @@
 #include "./include/HttpServer.h"
+#include "./include/my_database.h"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
@@ -16,7 +17,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 using namespace std;
-
 //以下信息由配置文件config.json定义：
 string IP = "121.36.249.52"; // web端跨域IP
 int MAX_LISTEN_QUEUE = 100;  // listen queue
@@ -177,6 +177,10 @@ int init_config(const string config_path)
         MAX_EPOLL_SIZE = config_json["MAX_EPOLL_SIZE"].as_int();
         BUFFER_SIZE = config_json["BUFFER_SIZE"].as_int();
         PORT = config_json["PORT"].as_int();
+        my_database_variable.host = config_json["HOST"].as_string();
+        my_database_variable.user = config_json["USER"].as_string();
+        my_database_variable.passwd = config_json["PASSWD"].as_string();
+        my_database_variable.db = config_json["DB"].as_string();
     }
     catch (exception e)
     {
@@ -188,6 +192,10 @@ int init_config(const string config_path)
     cout << "MAX_EPOLL_SIZE: " << MAX_EPOLL_SIZE << endl;
     cout << "BUFFER_SIZE: " << BUFFER_SIZE << endl;
     cout << "PORT: " << PORT << endl;
+    cout << "HOST: " << my_database_variable.host << endl;
+    cout << "USER: " << my_database_variable.user << endl;
+    cout << "PASSWD: " << my_database_variable.passwd << endl;
+    cout << "DB: " << my_database_variable.db << endl;
     mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t) * MAX_EPOLL_EVENT);
     memset(mutex, 0, sizeof(pthread_mutex_t) * MAX_EPOLL_EVENT);
     threads = (pthread_t *)malloc(sizeof(pthread_t) * MAX_EPOLL_EVENT);
