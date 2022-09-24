@@ -1,0 +1,6 @@
+# .gitignore 
+
+# ignore all files in pool/
+pool/*
+# except for .gitkeep
+!.gitkeep

@@ -34,7 +34,3 @@ Main
 Main-thread
 *.txt
 
-# pool temp
-/pool*
-*.pdf
-/client-test/pool*
