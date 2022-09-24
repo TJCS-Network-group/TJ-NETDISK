@@ -4,7 +4,7 @@
 src = Main-thread.cpp
 obj = Main-thread.o
 target = Main-thread
-select = -std=c++11 -Wall -g -O2 -lmysqlclient -lpthread
+select = -std=c++11 -Wall -g -O2 -lpthread -lmysqlclient
 common_src_path = $(wildcard ./common/*.cpp)
 common_obj_path=$(patsubst %.cpp, %.o, $(common_src_path))
 source_src_path = $(wildcard ./source/*.cpp)
@@ -16,7 +16,7 @@ CC = g++
 all: $(target)
 
 $(target): $(common_obj_path) $(source_obj_path) $(obj)
-	$(CC) $(select) $(obj) $(common_obj_path) $(source_obj_path) -o $@
+	$(CC) $(obj) $(common_obj_path) $(source_obj_path) -o $@ $(select) 
 
 %.o: %.cpp
 	$(CC) -c $< -o $@

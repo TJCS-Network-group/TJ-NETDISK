@@ -85,7 +85,7 @@ void epoll_mod_out(void *data, const int length, const int socketfd, const bool 
     }
     //创建一个HttpRequest对象解析原报文
     HttpRequest new_request(client_http_request);
-    // cout << new_request.Get_origin_headers() << endl;
+    //cout << new_request.Get_origin_headers() << endl;
 
     struct sockaddr_in clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
@@ -100,6 +100,8 @@ void epoll_mod_out(void *data, const int length, const int socketfd, const bool 
     }
     HttpResponse new_response = routers.getResponse(new_request);
     string send_content = new_response.getMessage();
+
+    //cout<<send_content<<endl;
 
     //因为从recv到send有可能不创建Myepoll_data *，因此就不再复用该指针
     Myepoll_data *resp = (Myepoll_data *)malloc(sizeof(Myepoll_data));
@@ -138,7 +140,7 @@ void *Epoll_mod_out_thread(void *param)
 }
 void My_epoll_create_thread(char *data, const int length, const int socketfd, const bool isfree)
 {
-    // cout << "尝试创建线程: " << socketfd << endl;
+    //cout << "尝试创建线程: " << socketfd << endl;
     ThreadArg *param = (ThreadArg *)malloc(sizeof(ThreadArg));
     param->data = (void *)data;
     param->length = length;
@@ -320,7 +322,7 @@ int main()
             }
             else if (events[i].events & EPOLLIN) //读新数据
             {
-                // cout << "EPOLLIN: " << socketfd << endl;
+                //cout << "EPOLLIN: " << socketfd << endl;
                 //  memset(buf, 0, BUFFER_SIZE);
                 char *buf = (char *)malloc(BUFFER_SIZE);       //接收传过来的http request请求
                 int len = recv(socketfd, buf, BUFFER_SIZE, 0); //接受数据
@@ -342,6 +344,7 @@ int main()
                         continue;
                         // exit(EXIT_FAILURE);
                     }
+                    close(socketfd);
                 }
                 else if (len > 0)
                 {
@@ -354,7 +357,7 @@ int main()
                         if (new_request.Get_request_len() == len) //读完了
                         {
                             My_epoll_create_thread(buf, len, socketfd, true);
-                            // cout << "创建线程成功: " << socketfd << endl;
+                            //cout << "创建线程成功: " << socketfd << endl;
                         }
                         else
                         {
@@ -423,7 +426,7 @@ int main()
             }
             else if (events[i].events & EPOLLOUT)
             {
-                // cout << "EPOLLOUT: " << socketfd << endl;
+                //cout << "EPOLLOUT: " << socketfd << endl;
                 Myepoll_data *md = (Myepoll_data *)events[i].data.ptr;
                 if (md->length > md->send_length)
                 {

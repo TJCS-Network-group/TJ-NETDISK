@@ -121,6 +121,7 @@ HttpResponse POST_register(HttpRequest &req)
         return make_response_json(500, "数据库查询出错,请联系管理员解决问题");
     }
     p.get();
+
     if (p.result_vector.size() > 0)
     {
         resp = make_response_json(400, "此用户名已被人使用");
@@ -130,7 +131,6 @@ HttpResponse POST_register(HttpRequest &req)
         string cmd = "echo -n " + password + " | md5sum", result;
         if (popen_cmd(cmd, result, 32 + 1) != -1)
         {
-
             sprintf(p.sql, "select max(id) as max_id from DirectoryEntity");
             if (p.execute() == -1)
             {
@@ -138,6 +138,7 @@ HttpResponse POST_register(HttpRequest &req)
             }
             p.get();
             int max_id = atoi(p.result_vector[0]["max_id"].c_str()) + 1;
+            
             sprintf(p.sql, "insert into DirectoryEntity(id,dname,parent_id) value (%d,\"%s\",%d)", max_id, "root", max_id);
             if (p.execute() == -1)
             {
@@ -147,6 +148,7 @@ HttpResponse POST_register(HttpRequest &req)
                     "insert into UserEntity(user_name,password_hash,root_dir_id) \
             value (\"%s\",\"%s\",%d)",
                     user_name.c_str(), result.c_str(), max_id);
+            
             if (p.execute() == -1)
             {
                 return make_response_json(500, "数据库查询出错,请联系管理员解决问题");

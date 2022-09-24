@@ -68,3 +68,5 @@ create function get_root(did INT)
 	end while;
     return @parent;
     end $$
+
+insert into DirectoryEntity(id,dname,parent_id) value (0,"default",0);

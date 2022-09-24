@@ -87,7 +87,7 @@ int epoll_mod_out(const Routers &routers, const char *data, const int length, co
         new_request.Parse_request_body();
     }
     HttpResponse new_response = routers.getResponse(new_request);
-    // cout << new_response.getHeaders() << endl;
+    cout << new_response.getHeaders() << endl;
     string send_content = new_response.getMessage();
 
     //因为从recv到send有可能不创建Myepoll_data *，因此就不再复用该指针
