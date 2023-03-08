@@ -25,7 +25,7 @@ void HttpRequest::Parse_request_header(const string _raw_http_request)
     time_t past_time;
     time(&past_time);
 
-    if (_raw_http_request.length() == 0 || _raw_http_request.find("HTTP") == _raw_http_request.npos || _raw_http_request.find(":") == _raw_http_request.npos) // len=0 新修改：需要有HTTP头，防止恶意爬取
+    if (_raw_http_request.length() == 0) // len=0
     {
         disconnect = true;
         return;

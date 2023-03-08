@@ -1,9 +1,9 @@
 {
-    "IP": "114.115.235.46", //web端IP（用于解决跨域问题）
+    "IP": "121.36.249.52", //web端IP（用于解决跨域问题）
     "PORT": 7777, //server端bind的端口号
     "BUFFER_SIZE": 20000, //缓冲区大小
     "USER": "root", //数据库用户
-    "PASSWD": "tj_market", //数据库密码
+    "PASSWD": "root123", //数据库密码
     "HOST": "localhost", //数据库host
     "DB": "pan", //数据库名
     "MAX_LISTEN_QUEUE": 100,
